@@ -137,16 +137,16 @@
 
 ---
 
-## 🖥️ Slide 9: Technology Stack
+## 🖥️ Slide 9: Technology Stack & Full-Stack Architecture
 
-### **Development & ML Environment**
-* **Language**: Python 3.10+
-* **ML Ensembles**: `xgboost`, `scikit-learn`
-* **Data & Time Series Processing**: `pandas`, `numpy`, `statsmodels`
-* **Visualization**: `matplotlib`, `seaborn`
-* **Serialization & Versioning**: `joblib`, `Git` & GitHub
+### **End-to-End Production Tech Stack**
+* 🧠 **ML & Analytics Engine**: Python 3.10+, `xgboost`, `scikit-learn`, `pandas`, `statsmodels`, `joblib`
+* ⚡ **Backend REST API**: **FastAPI** + `uvicorn` (serves `/api/v1/predict` and `/api/v1/clusters` endpoints)
+* 💻 **Frontend Fleet Dashboard**: **Next.js 14+ / React 18+**, TailwindCSS, Lucide Icons
+* 🗺️ **Geospatial & Charts**: `Leaflet.js` / `Mapbox GL` (spatial cluster heatmaps) & `Recharts` (hourly demand curves)
+* 🐳 **Deployment**: Docker, Vercel (Frontend), Render (FastAPI ML Microservice)
 
-> **🗣️ Speaker Notes**: The technology stack is built on Python 3.10+ using industry-standard libraries like pandas, statsmodels for ACF analysis, and XGBoost for ensemble learning.
+> **🗣️ Speaker Notes**: We use a full-stack architecture: Next.js/React for the fleet management UI with interactive Leaflet maps, FastAPI for serving real-time Python model predictions, and XGBoost for core time-series forecasting.
 
 ---
 

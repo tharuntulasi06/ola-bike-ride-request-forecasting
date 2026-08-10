@@ -195,14 +195,44 @@ To ensure robust spatial clustering, temporal accuracy, and cross-city generaliz
 
 ---
 
-## 9. Technology Stack
+## 9. Technology Stack & Full-Stack Architecture
 
+The system is structured as an end-to-end full-stack machine learning solution comprising a core ML engine, a RESTful API inference service, and a web operational dashboard for fleet managers.
+
+---
+
+### 9.1 Machine Learning & Analytics Engine
 * **Programming Language**: Python 3.10+
-* **Machine Learning Frameworks**: `scikit-learn` (v1.3+), `xgboost` (v2.0+)
-* **Data Processing & Time Series**: `pandas` (v2.0+), `numpy` (v1.24+), `statsmodels` (v0.14+)
-* **Data Visualization**: `matplotlib` (v3.7+), `seaborn` (v0.12+)
-* **Model Serialization**: `joblib` (v1.3+)
-* **Development Environment**: VS Code / Antigravity IDE, Jupyter Notebooks
+* **ML Frameworks**: `scikit-learn` (v1.3+), `xgboost` (v2.0+), `lightgbm` (v4.0+)
+* **Data Processing & Time-Series**: `pandas` (v2.0+), `numpy` (v1.24+), `statsmodels` (v0.14+)
+* **Model Serialization**: `joblib` (v1.3+), `pickle`
+
+---
+
+### 9.2 Backend API & Model Inference Service
+* **Framework**: **FastAPI** (Python 3.10+) — High-performance asynchronous RESTful API
+* **Web Server**: `uvicorn` / `gunicorn`
+* **Data Validation**: `pydantic` v2
+* **Core API Endpoints**:
+  * `POST /api/v1/predict` — Returns multi-step ($t+1 \dots t+4$ hour) demand predictions per spatial cluster.
+  * `GET /api/v1/clusters` — Serves MiniBatchKMeans spatial cluster boundaries and centroid coordinates.
+  * `GET /api/v1/analytics/metrics` — Delivers live WAPE, MAE, RMSE performance benchmarks.
+
+---
+
+### 9.3 Frontend Fleet Operations Dashboard
+* **Framework**: **Next.js 14+ / React 18+ (Vite)** — Server-rendered component UI
+* **Styling**: TailwindCSS & Lucide Icons
+* **Geospatial Mapping**: `Leaflet.js` / `React-Leaflet` / `Mapbox GL` (for real-time spatial demand heatmaps & cluster zoning)
+* **Data Visualization**: `Recharts` / `Chart.js` (for interactive actual vs. predicted hourly demand curves)
+* **State & Data Fetching**: `TanStack Query (React Query)` & `Axios`
+
+---
+
+### 9.4 DevOps & Deployment
+* **Containerization**: Docker & Docker Compose
+* **Frontend Hosting**: Vercel
+* **Backend Hosting**: Render / AWS EC2
 
 ---
 
