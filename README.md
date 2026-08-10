@@ -121,8 +121,9 @@ Open [http://localhost:3000](http://localhost:3000) to access the interactive Fl
 
 ## 📄 Key Project Deliverables
 
-* 📖 **[PROJECT_PROPOSAL.md](PROJECT_PROPOSAL.md)** — Academic Project Proposal & Technical Design Report.
-* 📊 **[SLIDES_PPT.md](SLIDES_PPT.md)** — Presentation Slide Deck with Speaker Notes.
+* 🧠 **[ML_PROPOSAL.md](ML_PROPOSAL.md)** — Machine Learning Framework Architecture & Mathematical Design Report.
+* 📖 **[PROJECT_PROPOSAL.md](PROJECT_PROPOSAL.md)** — Comprehensive Academic Project Proposal & System Design Report.
+* 📊 **[SLIDES_PPT.md](SLIDES_PPT.md)** — Faculty Presentation Slide Deck with Speaker Notes.
 
 ---
 

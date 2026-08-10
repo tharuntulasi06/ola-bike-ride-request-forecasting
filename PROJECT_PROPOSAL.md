@@ -104,17 +104,36 @@ Urban micro-mobility demand is heavily influenced by dynamic external drivers—
 
 ---
 
-## 7. Recommended Algorithm
+## 7. Recommended Machine Learning Framework & Ensemble Architecture
 
-### Primary Model: XGBoost (Extreme Gradient Boosting Regressor)
-* **Why Chosen**:
-  1. **Tabular Feature Efficiency**: XGBoost consistently dominates tabular time-series benchmark competitions, capturing complex non-linear interactions without requiring massive compute infrastructure.
-  2. **Tweedie / Poisson Loss Function**: Supports objective loss functions suited for zero-inflated count data (such as off-peak night-time demand).
-  3. **Robustness to Multicollinearity & Missing Data**: Gracefully handles correlated lag features and missing environmental values.
-  4. **Feature Importance Interpretability**: Provides explicit SHAP / Gain score analysis for faculty and operational stakeholders.
+> 📖 **Detailed Technical Specification**: For complete mathematical formulations, loss function equations, Optuna search spaces, and feature matrix definitions, see **[ML_PROPOSAL.md](ML_PROPOSAL.md)**.
 
-### Baseline Benchmark: Random Forest Regressor & Naive Historical Average
-* **Why Chosen**: Serves as a non-parametric ensemble baseline to empirically demonstrate XGBoost's performance lift.
+The core forecasting engine utilizes a **Gradient Boosting Trio (XGBoost + LightGBM + CatBoost)** architecture. Tree-based gradient boosting models consistently outperform deep neural networks on tabular spatiotemporal time-series data with exogenous weather features and spatial cluster markers.
+
+---
+
+### 7.1 Model 1: XGBoost (Extreme Gradient Boosting Regressor)
+* **Core Advantage**: Handles tabular time-series features with exact tree splitting algorithms.
+* **Tweedie / Poisson Objective**: Handles zero-inflated demand distributions during off-peak overnight hours ($00:00 - 05:00$).
+* **Feature Importance**: Provides explicit SHAP (SHapley Additive exPlanations) values to quantify the contribution of each temporal lag and weather feature.
+
+---
+
+### 7.2 Model 2: LightGBM (Light Gradient Boosting Machine)
+* **Core Advantage**: Leaf-wise tree growth algorithm yielding **10x–15x faster training speeds** on multi-million record spatiotemporal datasets.
+* **Native Categorical Splitting**: Efficiently splits high-cardinality spatial Cluster IDs and temporal categorical encodings without ballooning memory usage.
+
+---
+
+### 7.3 Model 3: CatBoost (Categorical Boosting Regressor)
+* **Core Advantage**: Implements ordered boosting with dynamic target statistics for spatial cluster identifiers, preventing target leakage during multi-step horizon prediction.
+* **Symmetric Tree Architecture**: Prevents overfitting on noise-heavy weather transition periods.
+
+---
+
+### 7.4 Stacking Meta-Ensemble & Baseline Benchmarks
+* **Weighted Stacking Meta-Ensemble**: Combines out-of-fold prediction probabilities from XGBoost, LightGBM, and CatBoost to minimize variance and lower overall WAPE/RMSE metrics.
+* **Baseline Benchmarks**: Evaluated against **Random Forest Regressor** and **Naive Historical Moving Average** models to quantify the empirical performance lift.
 
 ---
 
