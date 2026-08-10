@@ -58,16 +58,17 @@ $$\min_{S} \sum_{k=1}^{K} \sum_{\mathbf{x} \in S_k} \|\mathbf{x} - \boldsymbol{\
 
 ---
 
-## 3. Machine Learning Framework Comparison & Selection
+## 3. Machine Learning & Deep Learning Framework Selection
 
-We evaluate and compare four machine learning algorithms tailored for structured spatiotemporal tabular data:
+We evaluate and compare five machine learning algorithms across two distinct computing paradigms—Gradient Boosted Decision Trees (GBDTs) and Spatiotemporal Graph Neural Networks (ST-GNNs):
 
-| ML Framework | Primary Advantage | Loss Function / Objective | Operational Role |
-| :--- | :--- | :--- | :--- |
-| **XGBoost** (`xgboost`) | Exact tree splitting, regularization ($L_1/L_2$), robust feature importance | Tweedie ($1 < p < 2$) / Poisson | **Primary Regressor** |
-| **LightGBM** (`lightgbm`) | Leaf-wise tree growth, GOSS, EFB, 10x-15x faster execution speed | L1 / Huber / Tweedie | **Fast Large-Scale Regressor** |
-| **CatBoost** (`catboost`) | Ordered Boosting, native categorical encoding for spatial cluster IDs | RMSE / MAE | **Categorical Spatial Regressor** |
-| **Random Forest** (`scikit-learn`) | Bagging ensemble, non-parametric baseline | MSE | **Non-Parametric Baseline** |
+| ML / DL Framework | Paradigm | Primary Advantage | Spatial & Loss Formulation | Operational Role |
+| :--- | :--- | :--- | :--- | :--- |
+| **XGBoost** (`xgboost`) | Tree Ensemble (GBDT) | Exact tree splits, regularization ($L_1/L_2$), SHAP interpretability | Categorical Cluster IDs, Tweedie ($1 < p < 2$) | **Primary Production Regressor** |
+| **LightGBM** (`lightgbm`) | Tree Ensemble (GBDT) | Leaf-wise growth, GOSS, EFB, 10x-15x faster execution speed | Categorical Cluster IDs, L1 / Huber | **Fast Large-Scale Regressor** |
+| **CatBoost** (`catboost`) | Tree Ensemble (GBDT) | Ordered Boosting, target encoding for spatial cluster IDs | Categorical Cluster IDs, RMSE / MAE | **Categorical Spatial Regressor** |
+| **ST-GNN** (`torch_geometric`) | Spatiotemporal Deep Learning | Continuous spatial graph spillover via Adjacency Matrix ($W$) | Spatial Graph Convolution ($W_{ij}$) + Temporal Dilated Conv | **Advanced Deep Learning Benchmark** |
+| **Random Forest** (`scikit-learn`) | Bagging Ensemble | Non-parametric baseline, simple tree aggregation | Feature-based, MSE | **Non-Parametric Baseline** |
 
 ---
 
@@ -89,6 +90,21 @@ LightGBM uses **Gradient-based One-Side Sampling (GOSS)** to filter data instanc
 
 ### 3.3 CatBoost (Categorical Boosting)
 CatBoost uses **Ordered Boosting** to combat target leakage occurring in traditional GBDTs when calculating target statistics for spatial cluster IDs. It builds symmetric (oblivious) trees to prevent overfitting during sudden weather transitions.
+
+---
+
+### 3.4 Spatiotemporal Graph Neural Network (ST-GNN / Graph WaveNet)
+Implemented in **PyTorch Geometric (`torch_geometric`)**, the ST-GNN models the urban environment as a spatial graph $G = (V, E, W)$:
+
+1. **Graph Adjacency Matrix $\mathbf{W} \in \mathbb{R}^{K \times K}$**: Derived from cluster centroid GPS coordinates using Gaussian thresholded distance:
+
+$$W_{ij} = \exp\left(-\left(\frac{\text{dist}(\text{centroid}_i, \text{centroid}_j)}{\sigma}\right)^2\right) \quad \text{for } \text{dist}(i, j) \le \kappa, \text{ else } 0$$
+
+2. **Graph Spatial Convolution Layer**: Captures demand spillover from neighboring zones:
+
+$$\mathbf{H}^{(l+1)} = \sigma\left( \mathbf{\tilde{D}}^{-\frac{1}{2}} \mathbf{\tilde{W}} \mathbf{\tilde{D}}^{-\frac{1}{2}} \mathbf{H}^{(l)} \mathbf{\Theta}^{(l)} \right)$$
+
+3. **Temporal Gated Dilated Convolution**: Extracts multi-hour time trends ($t-1, t-24$) across stacked receptive fields.
 
 ---
 

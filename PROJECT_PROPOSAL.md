@@ -131,8 +131,14 @@ The core forecasting engine utilizes a **Gradient Boosting Trio (XGBoost + Light
 
 ---
 
-### 7.4 Stacking Meta-Ensemble & Baseline Benchmarks
-* **Weighted Stacking Meta-Ensemble**: Combines out-of-fold prediction probabilities from XGBoost, LightGBM, and CatBoost to minimize variance and lower overall WAPE/RMSE metrics.
+### 7.4 Model 4: Spatiotemporal Graph Neural Network (ST-GNN / Graph WaveNet)
+* **Core Advantage**: Built using **PyTorch Geometric (`torch_geometric`)**, constructing a continuous spatial graph adjacency matrix ($W_{ij}$) across cluster GPS centroids.
+* **Neighborhood Demand Spillover**: Graph Convolutions capture real-time demand spillover between adjacent zones (e.g., transit hubs to residential areas).
+
+---
+
+### 7.5 Stacking Meta-Ensemble & Baseline Benchmarks
+* **Weighted Stacking Meta-Ensemble**: Combines out-of-fold predictions from XGBoost, LightGBM, CatBoost, and ST-GNN to minimize overall WAPE and RMSE metrics.
 * **Baseline Benchmarks**: Evaluated against **Random Forest Regressor** and **Naive Historical Moving Average** models to quantify the empirical performance lift.
 
 ---
@@ -222,9 +228,9 @@ The system is structured as an end-to-end full-stack machine learning solution c
 
 ### 9.1 Machine Learning & Analytics Engine
 * **Programming Language**: Python 3.10+
-* **ML Frameworks**: `scikit-learn` (v1.3+), `xgboost` (v2.0+), `lightgbm` (v4.0+)
+* **ML & DL Frameworks**: `scikit-learn` (v1.3+), `xgboost` (v2.0+), `lightgbm` (v4.0+), `catboost` (v1.2+), `torch` (v2.1+), `torch_geometric` (v2.4+)
 * **Data Processing & Time-Series**: `pandas` (v2.0+), `numpy` (v1.24+), `statsmodels` (v0.14+)
-* **Model Serialization**: `joblib` (v1.3+), `pickle`
+* **Model Serialization**: `joblib` (v1.3+), `pickle`, `torch.save`
 
 ---
 

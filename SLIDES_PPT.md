@@ -103,18 +103,16 @@
 
 ---
 
-## 🖥️ Slide 7: Recommended Algorithm
+## 🖥️ Slide 7: ML Framework: GBDTs & Spatiotemporal GNN
 
-### **Primary Model: XGBoost Regressor**
-* **Why XGBoost?**
-  * **Tabular Time-Series Dominance**: Superior performance on structured lag and weather features.
-  * **Tweedie / Poisson Loss**: Handles zero-inflated demand during off-peak night hours efficiently.
-  * **Feature Interaction Handling**: Automatically learns non-linear interactions between weather severity and peak hours.
+### **Dual-Paradigm Ensemble & Deep Learning Benchmark**
+* ⚡ **XGBoost Regressor**: Handles complex tabular lag structures with Tweedie / Poisson loss for zero-inflated overnight demand.
+* 🚀 **LightGBM**: Leaf-wise tree growth delivering **10x–15x faster training speed** on multi-million spatiotemporal records.
+* 🐱 **CatBoost**: Ordered boosting with target encoding for spatial Cluster IDs without data leakage.
+* 🕸️ **Spatiotemporal GNN (`PyTorch Geometric`)**: Graph WaveNet architecture modeling physical distance adjacency ($W_{ij}$) for neighborhood demand spillover.
+* 🥞 **Weighted Stacking Ensemble**: Combines out-of-fold predictions from all models to minimize WAPE & RMSE metrics.
 
-### **Baseline Benchmark: Random Forest Regressor**
-* Non-parametric ensemble baseline to validate XGBoost performance gain.
-
-> **🗣️ Speaker Notes**: We selected XGBoost as our primary regressor because of its proven accuracy on tabular time-series features and support for zero-inflated Tweedie loss functions.
+> **🗣️ Speaker Notes**: We utilize a dual-paradigm framework: combining XGBoost, LightGBM, and CatBoost for tabular efficiency, alongside a PyTorch Spatiotemporal Graph Neural Network (ST-GNN) as an advanced benchmark to model dynamic spatial demand spillover.
 
 ---
 
@@ -140,13 +138,13 @@
 ## 🖥️ Slide 9: Technology Stack & Full-Stack Architecture
 
 ### **End-to-End Production Tech Stack**
-* 🧠 **ML & Analytics Engine**: Python 3.10+, `xgboost`, `scikit-learn`, `pandas`, `statsmodels`, `joblib`
+* 🧠 **ML & DL Engine**: Python 3.10+, `xgboost`, `lightgbm`, `catboost`, `torch`, `torch_geometric`, `scikit-learn`
 * ⚡ **Backend REST API**: **FastAPI** + `uvicorn` (serves `/api/v1/predict` and `/api/v1/clusters` endpoints)
 * 💻 **Frontend Fleet Dashboard**: **Next.js 14+ / React 18+**, TailwindCSS, Lucide Icons
 * 🗺️ **Geospatial & Charts**: `Leaflet.js` / `Mapbox GL` (spatial cluster heatmaps) & `Recharts` (hourly demand curves)
 * 🐳 **Deployment**: Docker, Vercel (Frontend), Render (FastAPI ML Microservice)
 
-> **🗣️ Speaker Notes**: We use a full-stack architecture: Next.js/React for the fleet management UI with interactive Leaflet maps, FastAPI for serving real-time Python model predictions, and XGBoost for core time-series forecasting.
+> **🗣️ Speaker Notes**: We use a full-stack architecture: Next.js/React for the fleet management UI with interactive Leaflet maps, FastAPI for serving real-time Python model predictions, and XGBoost + PyTorch GNNs for core time-series forecasting.
 
 ---
 
