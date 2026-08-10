@@ -103,24 +103,80 @@ Urban micro-mobility demand is heavily influenced by dynamic external drivers—
 
 ---
 
-## 8. Dataset Specifications
+## 8. Dataset Specifications & Multi-Source Integration
 
-* **Source**: Kaggle Dataset — `palvinder2006/ola-bike-ride-request` (Ola Bike Ride Request Dataset).
-* **Expected Size**: ~17,379 hourly records spanning multi-year continuous operations (~175 KB compressed / ~1.5 MB uncompressed tabular CSV).
+To ensure robust spatial clustering, temporal accuracy, and cross-city generalizability, the project incorporates a multi-dataset strategy comprising primary ride request data, raw spatial GPS coordinates, large-scale ride-hailing benchmarks, and exogenous environmental feeds.
+
+---
+
+### 8.1 Primary Target Dataset: Ola Bike Ride Request Dataset
+* **Source**: Kaggle Dataset — `palvinder2006/ola-bike-ride-request`
+* **Size & Granularity**: ~17,379 continuous hourly records spanning multi-year operations (~1.5 MB CSV).
+* **Role**: Primary dataset for short-horizon multi-step demand forecasting ($t+1 \dots t+4$ hours) and weather sensitivity modeling.
 * **Feature Schema**:
 
 | Column Name | Data Type | Description |
 | :--- | :--- | :--- |
-| `datetime` / `timestamp` | Datetime | Hourly time stamp of recorded requests |
-| `season` | Categorical | Season (1: Spring, 2: Summer, 3: Fall, 4: Winter) |
-| `weather_situation` | Categorical | Weather severity (1: Clear, 2: Cloudy, 3: Light Rain, 4: Heavy Rain) |
-| `temp` | Continuous | Normalized ambient temperature (°C) |
-| `atemp` | Continuous | Normalized "feels-like" temperature (°C) |
-| `humidity` | Continuous | Relative humidity percentage |
+| `datetime` / `timestamp` | Datetime | Hourly timestamp of recorded bike requests |
+| `season` | Categorical | Operating season (1: Spring, 2: Summer, 3: Fall, 4: Winter) |
+| `weather_situation` | Categorical | Weather severity index (1: Clear, 2: Cloudy, 3: Light Rain, 4: Heavy Rain) |
+| `temp` | Continuous | Ambient temperature (°C, normalized) |
+| `atemp` | Continuous | "Feels-like" temperature (°C, normalized) |
+| `humidity` | Continuous | Relative humidity percentage (%) |
 | `windspeed` | Continuous | Normalized wind speed |
-| `casual` | Integer | Ride requests by non-registered/guest users |
-| `registered` | Integer | Ride requests by registered subscribers |
-| `cnt` **(Target)** | Integer | **Total Ola Bike ride request volume** |
+| `casual` | Integer | Ride requests by non-registered / guest users |
+| `registered` | Integer | Ride requests by registered platform subscribers |
+| `cnt` **(Target)** | Integer | **Total aggregated Ola bike ride request volume** |
+
+---
+
+### 8.2 Geospatial Clustering Dataset: Uber NYC Spatiotemporal Pickup Dataset
+* **Source**: Kaggle / Uber Movement — `uber-pickups-in-new-york-city`
+* **Size & Granularity**: ~4.5+ Million individual raw trip pickup records with precise GPS coordinates.
+* **Role**: Provides granular raw latitude and longitude coordinates to implement, tune, and evaluate `MiniBatchKMeans` spatial clustering for zone-based hotspot partitioning.
+* **Feature Schema**:
+
+| Column Name | Data Type | Description |
+| :--- | :--- | :--- |
+| `Date/Time` | Datetime | Precise timestamp of ride pickup |
+| `Lat` | Float Continuous | Pickup latitude coordinate |
+| `Lon` | Float Continuous | Pickup longitude coordinate |
+| `Base` | Categorical | Dispatching base code / fleet identifier |
+
+---
+
+### 8.3 Cross-City Benchmarking Dataset: NYC TLC Ride-Hailing Dataset (FHV / Yellow Taxi)
+* **Source**: NYC Taxi & Limousine Commission Open Data Portal
+* **Size & Granularity**: ~10+ Million ride-hailing trip records partitioned across 263 discrete spatial taxi zones.
+* **Role**: Used as a secondary benchmark dataset to validate the generalizability of XGBoost and Random Forest models across larger metropolitan ride-hailing networks.
+* **Feature Schema**:
+
+| Column Name | Data Type | Description |
+| :--- | :--- | :--- |
+| `tpep_pickup_datetime` | Datetime | Ride request pickup timestamp |
+| `PULocationID` | Integer / Categorical | Spatiotemporal Pickup Zone ID (1 to 263) |
+| `DOLocationID` | Integer / Categorical | Drop-off Zone ID (1 to 263) |
+| `trip_distance` | Continuous | Total distance covered per trip (miles) |
+| `passenger_count` | Integer | Passenger volume per request |
+| `fare_amount` | Continuous | Base fare amount charged ($) |
+| `congestion_surcharge` | Continuous | Peak-hour traffic congestion fee ($) |
+
+---
+
+### 8.4 Auxiliary Exogenous Dataset: OpenWeatherMap Historical & Holiday Features
+* **Source**: OpenWeatherMap API & National Public Holidays Database
+* **Size & Granularity**: Hourly environmental logs aligned temporally with ride request windows.
+* **Role**: Enriches temporal feature matrices with fine-grained precipitation volumes, visibility ranges, and calendar holiday flags.
+* **Feature Schema**:
+
+| Column Name | Data Type | Description |
+| :--- | :--- | :--- |
+| `timestamp` | Datetime | Hourly temporal matching key |
+| `rain_1h` | Continuous | Hourly rainfall precipitation depth (mm) |
+| `visibility` | Continuous | Meteorological atmospheric visibility distance (meters) |
+| `pressure` | Continuous | Sea-level barometric pressure (hPa) |
+| `is_holiday` | Binary Flag | Public / bank holiday indicator (0: Regular, 1: Holiday) |
+| `is_weekend` | Binary Flag | Weekend day indicator (0: Weekday, 1: Weekend) |
 
 ---
 
@@ -153,3 +209,6 @@ Urban micro-mobility demand is heavily influenced by dynamic external drivers—
 2. X. Li, G. Pan, and Z. Wu, "Short-Term Ride-Hailing Demand Forecasting: A Hybrid Geospatial Clustering and XGBoost Approach," *IEEE Transactions on Intelligent Transportation Systems*, vol. 23, no. 8, pp. 11204–11215, 2022.
 3. Y. Chen, H. Wang, and L. Sun, "Weather-Aware Bike Sharing Demand Forecasting Using Multi-Step Tree Ensemble Methods," *Transportation Research Part C: Emerging Technologies*, vol. 148, p. 104012, 2023.
 4. P. Singh, "Ola Bike Ride Request Dataset," *Kaggle Datasets*, 2025. [Online]. Available: https://www.kaggle.com/datasets/palvinder2006/ola-bike-ride-request
+5. Uber Technologies Inc., "Uber Pickups in New York City (Spatiotemporal GPS Trip Data)," *Kaggle Datasets / Uber Movement*, 2023. [Online]. Available: https://www.kaggle.com/datasets/fivethirtyeight/uber-pickups-in-new-york-city
+6. NYC Taxi & Limousine Commission, "TLC Trip Record Data (FHV & Yellow Taxi Spatiotemporal Demand)," *NYC Open Data*, 2024. [Online]. Available: https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
+7. OpenWeatherMap, "Historical Weather Data & Meteorological Parameters API," 2025. [Online]. Available: https://openweathermap.org/api

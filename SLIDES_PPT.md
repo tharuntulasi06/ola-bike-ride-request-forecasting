@@ -118,18 +118,22 @@
 
 ---
 
-## 🖥️ Slide 8: Dataset Specifications
+## 🖥️ Slide 8: Multi-Dataset Specifications
 
-### **Kaggle: `palvinder2006/ola-bike-ride-request`**
-* **Record Count**: ~17,379 hourly entries (spanning 2 years).
-* **Key Attributes**:
-  * 🕒 `timestamp` / `datetime`: Hourly temporal records.
-  * ☀️ `season`, `weather_situation`: Environmental severity index.
-  * 🌡️ `temp`, `atemp`, `humidity`, `windspeed`: Normalized weather readings.
-  * 👥 `casual`, `registered`: User segment breakdowns.
-  * 🎯 `cnt` **(Target Variable)**: Total bike ride request volume.
+### **Multi-Source Data Integration Strategy**
+* 🚴 **Primary Target Dataset — Ola Bike Ride Request (Kaggle)**:
+  * **Volume**: ~17,379 continuous hourly operational records (~2 years).
+  * **Features**: `datetime`, `season`, `weather_situation`, `temp`, `humidity`, `windspeed`, `cnt` (Target).
+* 📍 **Geospatial GPS Dataset — Uber NYC Spatiotemporal Pickups**:
+  * **Volume**: ~4.5M raw trip records with precise `Lat`, `Lon`, `Date/Time` coordinates.
+  * **Role**: Evaluates `MiniBatchKMeans` spatial clustering for zone hotspot allocation.
+* 🚕 **Cross-City Benchmark — NYC TLC Ride-Hailing Dataset**:
+  * **Volume**: ~10M records across 263 discrete spatial zones (`PULocationID`, `DOLocationID`, `fare_amount`).
+  * **Role**: Validates model scalability across high-density urban mobility networks.
+* 🌤️ **Exogenous Features — OpenWeatherMap & Holiday API**:
+  * **Role**: Enriches lag matrices with precipitation volume (mm), visibility (m), and public holiday binary flags.
 
-> **🗣️ Speaker Notes**: The dataset contains over 17,000 hourly operational records with detailed weather metrics, subscriber split, and total ride volume targets.
+> **🗣️ Speaker Notes**: We employ a multi-dataset strategy: using the primary Ola dataset for temporal forecasting, Uber NYC raw GPS logs for MiniBatchKMeans spatial clustering, NYC TLC data for cross-city benchmarking, and OpenWeatherMap for exogenous feature enrichment.
 
 ---
 
@@ -172,11 +176,14 @@
 
 ---
 
-## 🖥️ Slide 12: References
+## 🖥️ Slide 12: References & Data Sources
 
 1. J. Zhang, Y. Zheng, and D. Qi, "Deep Spatiotemporal Residual Networks for Citywide Crowd Flows Prediction," *IEEE Transactions on Mobile Computing*, vol. 20, no. 12, pp. 3250–3265, 2021.
 2. X. Li, G. Pan, and Z. Wu, "Short-Term Ride-Hailing Demand Forecasting: A Hybrid Geospatial Clustering and XGBoost Approach," *IEEE Transactions on Intelligent Transportation Systems*, vol. 23, no. 8, pp. 11204–11215, 2022.
 3. Y. Chen, H. Wang, and L. Sun, "Weather-Aware Bike Sharing Demand Forecasting Using Multi-Step Tree Ensemble Methods," *Transportation Research Part C: Emerging Technologies*, vol. 148, p. 104012, 2023.
-4. P. Singh, "Ola Bike Ride Request Dataset," *Kaggle Datasets*, 2025. [Online]. Available: https://www.kaggle.com/datasets/palvinder2006/ola-bike-ride-request
+4. P. Singh, "Ola Bike Ride Request Dataset," *Kaggle Datasets*, 2025.
+5. Uber Technologies Inc., "Uber Pickups in New York City (GPS Trip Data)," *Kaggle Datasets / Uber Movement*, 2023.
+6. NYC Taxi & Limousine Commission, "TLC Trip Record Data (FHV Spatiotemporal Demand)," *NYC Open Data*, 2024.
+7. OpenWeatherMap, "Historical Weather Data & Meteorological Parameters API," 2025.
 
 > **🗣️ Speaker Notes**: Thank you for your time. I am now open to your questions and feedback.
