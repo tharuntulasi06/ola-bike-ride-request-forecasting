@@ -1,4 +1,4 @@
-# Python
+# Python & Environments
 __pycache__/
 *.py[cod]
 *$py.class
@@ -7,17 +7,41 @@ __pycache__/
 env/
 venv/
 ENV/
+*.egg-info/
+dist/
+build/
 
 # Testing & Coverage
 .pytest_cache/
 .coverage
 htmlcov/
 
+# Data & Serialized Artifacts
+data/raw/*.csv
+data/processed/*.csv
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+models/
+*.joblib
+*.pkl
+*.pt
+*.pth
+
+# Frontend / Dashboard
+dashboard/node_modules/
+dashboard/.next/
+dashboard/out/
+dashboard/build/
+dashboard/dist/
+dashboard/.env*.local
+
 # Environment variables
 .env
-.env.local
+.env.*
 
-# OS generated files
+# IDEs & OS files
+.vscode/
+.idea/
 .DS_Store
 .DS_Store?
 ._*
@@ -25,3 +49,4 @@ htmlcov/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
