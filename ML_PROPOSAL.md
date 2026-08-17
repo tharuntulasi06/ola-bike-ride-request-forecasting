@@ -52,9 +52,12 @@ $$\text{hour\_sin} = \sin\left(\frac{2\pi \cdot h}{24}\right), \quad \text{hour\
 $$\text{dow\_sin} = \sin\left(\frac{2\pi \cdot d}{7}\right), \quad \text{dow\_cos} = \cos\left(\frac{2\pi \cdot d}{7}\right)$$
 
 ### 2.4 Spatial Hotspot Allocation (`MiniBatchKMeans`)
-Groups raw pickup latitude and longitude coordinates $(\text{lat}_i, \text{lon}_i)$ into $K$ centroid zones:
+Groups raw pickup latitude and longitude coordinates $(\text{lat}_i, \text{lon}_i)$ into $K$ centroid zones ($K=6$ for Chennai case study: Chennai Central, T. Nagar, OMR IT Corridor, Velachery, Guindy, CMBT):
 
 $$\min_{S} \sum_{k=1}^{K} \sum_{\mathbf{x} \in S_k} \|\mathbf{x} - \boldsymbol{\mu}_k\|^2$$
+
+The centroids $\boldsymbol{\mu}_k$ feed directly into both tabular GBDTs as categorical Cluster IDs and into the ST-GNN to construct the Haversine distance Graph Adjacency Matrix ($W_{ij}$).
+
 
 ---
 

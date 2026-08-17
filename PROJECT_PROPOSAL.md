@@ -166,22 +166,30 @@ To ensure robust spatial clustering, temporal accuracy, and cross-city generaliz
 | `windspeed` | Continuous | Normalized wind speed |
 | `casual` | Integer | Ride requests by non-registered / guest users |
 | `registered` | Integer | Ride requests by registered platform subscribers |
-| `cnt` **(Target)** | Integer | **Total aggregated Ola bike ride request volume** |
+| `cnt` | Integer | **Total aggregated Ola bike ride request volume** |
 
 ---
 
-### 8.2 Geospatial Clustering Dataset: Uber NYC Spatiotemporal Pickup Dataset
-* **Source**: Kaggle / Uber Movement — `uber-pickups-in-new-york-city`
-* **Size & Granularity**: ~4.5+ Million individual raw trip pickup records with precise GPS coordinates.
+### 8.2 Geospatial Clustering Dataset: Chennai & Uber GPS Spatiotemporal Pickup Dataset
+* **Source**: Synthetic & Kaggle — `uber-pickups-in-new-york-city` / Chennai GPS Hotspot Logs
+* **Size & Granularity**: ~50,000+ individual raw trip pickup records centered around 6 iconic Chennai landmarks:
+  1. `chennai_central` — Chennai Central & Egmore Railway Station (`13.0827°N, 80.2707°E`)
+  2. `t_nagar` — T. Nagar & Saidapet Shopping Hub (`13.0418°N, 80.2341°E`)
+  3. `omr_it_corridor` — OMR IT Corridor (Perungudi & Thoraipakkam) (`12.9645°N, 80.2443°E`)
+  4. `velachery` — Velachery Railway & Bus Terminal (`12.9750°N, 80.2207°E`)
+  5. `guindy_kathipara` — Guindy & Kathipara Junction (`13.0067°N, 80.2020°E`)
+  6. `cmbt_anna_nagar` — CMBT Bus Terminus & Anna Nagar (`13.0850°N, 80.2101°E`)
 * **Role**: Provides granular raw latitude and longitude coordinates to implement, tune, and evaluate `MiniBatchKMeans` spatial clustering for zone-based hotspot partitioning.
 * **Feature Schema**:
 
 | Column Name | Data Type | Description |
 | :--- | :--- | :--- |
-| `Date/Time` | Datetime | Precise timestamp of ride pickup |
+| `Date/Time` / `datetime` | Datetime | Precise timestamp of ride pickup |
+| `city` | Categorical | Target city context (e.g. `chennai`, `nyc`) |
 | `Lat` | Float Continuous | Pickup latitude coordinate |
 | `Lon` | Float Continuous | Pickup longitude coordinate |
-| `Base` | Categorical | Dispatching base code / fleet identifier |
+| `zone_landmark` | Categorical | Nearest urban landmark centroid |
+| `Base` | Categorical | Dispatching fleet identifier |
 
 ---
 

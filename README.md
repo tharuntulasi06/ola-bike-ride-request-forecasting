@@ -14,6 +14,7 @@ This repository provides an end-to-end production-grade machine learning system 
 
 ## ✨ Key System Features
 
+* 🏛️ **Modular City-Aware Architecture (Chennai Case Study)**: Configurable city pipeline featuring **Chennai** as the primary flagship case study (OMR IT Corridor, Guindy Kathipara, T. Nagar, Chennai Central, Velachery, CMBT) with cross-city generalizability benchmarking.
 * 📍 **Geospatial Hotspot Allocation**: Groups pickup coordinates into localized demand zones using `MiniBatchKMeans` spatial clustering.
 * ⏰ **Autocorrelation & Temporal Engineering**: Extracts statistical lag features ($t-1$, $t-24$, $t-168$) using ACF/PACF analysis alongside cyclical sine/cosine time encodings.
 * 🌤️ **Exogenous Weather & Holiday Interactions**: Incorporates rolling window temperature, "feels-like" temperature, humidity, windspeed, precipitation, and public holiday markers.
@@ -21,6 +22,7 @@ This repository provides an end-to-end production-grade machine learning system 
 * 🕸️ **Spatiotemporal Graph Neural Network**: Models physical distance spatial adjacency ($W_{ij}$) via **PyTorch Geometric (`torch_geometric`)** to capture neighborhood demand spillover.
 * 📊 **Robust Evaluation Suite**: Benchmarks models using **WAPE (Weighted Absolute Percentage Error)**, MAE, RMSE, and $R^2$ scores to handle zero-inflated off-peak hours effectively.
 * 🖥️ **Full-Stack Production Architecture**: Features a high-performance **FastAPI** Python inference service and an interactive **Next.js 14 / React** Fleet Management Dashboard with `Leaflet.js` spatial heatmaps.
+
 
 ---
 

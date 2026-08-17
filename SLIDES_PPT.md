@@ -122,16 +122,17 @@
 * 🚴 **Primary Target Dataset — Ola Bike Ride Request (Kaggle)**:
   * **Volume**: ~17,379 continuous hourly operational records (~2 years).
   * **Features**: `datetime`, `season`, `weather_situation`, `temp`, `humidity`, `windspeed`, `cnt` (Target).
-* 📍 **Geospatial GPS Dataset — Uber NYC Spatiotemporal Pickups**:
-  * **Volume**: ~4.5M raw trip records with precise `Lat`, `Lon`, `Date/Time` coordinates.
-  * **Role**: Evaluates `MiniBatchKMeans` spatial clustering for zone hotspot allocation.
+* 📍 **Geospatial GPS Dataset — Chennai Hotspots & Uber Pickups**:
+  * **Volume**: ~50,000 raw trip records clustered around 6 key Chennai landmarks (OMR IT Corridor, Guindy Kathipara, T. Nagar, Chennai Central, Velachery, CMBT).
+  * **Role**: Evaluates `MiniBatchKMeans` spatial clustering and builds Graph Adjacency Matrix ($W_{ij}$) for ST-GNN.
 * 🚕 **Cross-City Benchmark — NYC TLC Ride-Hailing Dataset**:
   * **Volume**: ~10M records across 263 discrete spatial zones (`PULocationID`, `DOLocationID`, `fare_amount`).
-  * **Role**: Validates model scalability across high-density urban mobility networks.
+  * **Role**: Validates model scalability outside Chennai across high-density metropolitan networks.
 * 🌤️ **Exogenous Features — OpenWeatherMap & Holiday API**:
-  * **Role**: Enriches lag matrices with precipitation volume (mm), visibility (m), and public holiday binary flags.
+  * **Role**: Enriches lag matrices with precipitation volume (mm), visibility (m), and Indian public holiday binary flags.
 
-> **🗣️ Speaker Notes**: We employ a multi-dataset strategy: using the primary Ola dataset for temporal forecasting, Uber NYC raw GPS logs for MiniBatchKMeans spatial clustering, NYC TLC data for cross-city benchmarking, and OpenWeatherMap for exogenous feature enrichment.
+> **🗣️ Speaker Notes**: We employ a modular, multi-dataset strategy: featuring Chennai micro-mobility hotspots (OMR IT Corridor, Guindy Metro, T. Nagar) as our flagship implementation, while using NYC TLC trip logs as a cross-city benchmark to prove generalizability.
+
 
 ---
 
