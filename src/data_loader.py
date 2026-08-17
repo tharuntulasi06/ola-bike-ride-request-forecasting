@@ -3,11 +3,12 @@ import logging
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from typing import Optional, Tuple, Dict, Any
+from typing import Optional, Tuple, Dict, Any, List, Union
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
+
 
 class OlaDataLoader:
     """
@@ -37,6 +38,12 @@ class OlaDataLoader:
         "uew_harlem": (40.8075, -73.9465)
     }
 
+    # Bounding boxes for spatial coordinate validation
+    CITY_BOUNDING_BOXES = {
+        "chennai": {"lat_min": 12.80, "lat_max": 13.25, "lon_min": 80.10, "lon_max": 80.35},
+        "nyc": {"lat_min": 40.50, "lat_max": 40.95, "lon_min": -74.25, "lon_max": -73.70},
+    }
+
     def __init__(self, data_dir: Optional[str] = None, default_city: str = "chennai"):
         """
         Initialize DataLoader with raw and processed data directory paths and default city context.
@@ -49,6 +56,108 @@ class OlaDataLoader:
         # Create directories if they do not exist
         self.raw_dir.mkdir(parents=True, exist_ok=True)
         self.processed_dir.mkdir(parents=True, exist_ok=True)
+
+    def parse_raw_gps_coordinates(
+        self,
+        df: pd.DataFrame,
+        lat_col: Optional[str] = None,
+        lon_col: Optional[str] = None,
+        time_col: Optional[str] = None,
+        city: Optional[str] = None,
+        filter_bounds: bool = True,
+        tag_nearest_hotspot: bool = True
+    ) -> pd.DataFrame:
+        """
+        Parses, cleans, and standardizes raw GPS spatial trip logs with dynamic schema resolution.
+        
+        Parameters:
+            df: Input raw DataFrame with spatial coordinates and timestamps.
+            lat_col: Explicit name of latitude column (or auto-detected).
+            lon_col: Explicit name of longitude column (or auto-detected).
+            time_col: Explicit name of timestamp column (or auto-detected).
+            city: City identifier for bounding box and hotspot matching (default: self.default_city).
+            filter_bounds: If True, filters out coordinates outside the city bounding box.
+            tag_nearest_hotspot: If True, tags each record with its nearest landmark hotspot centroid.
+            
+        Returns:
+            Clean standardized DataFrame with columns ['datetime', 'lat', 'lon', 'city', ...].
+        """
+        df = df.copy()
+        target_city = (city or self.default_city).lower()
+        cols_lower = {col.lower(): col for col in df.columns}
+
+        # 1. Resolve Latitude Column
+        if lat_col and lat_col in df.columns:
+            actual_lat = lat_col
+        else:
+            lat_candidates = ["lat", "latitude", "pickup_lat", "pickup_latitude", "pu_lat", "y"]
+            actual_lat = next((cols_lower[c] for c in lat_candidates if c in cols_lower), None)
+            if not actual_lat:
+                raise ValueError(f"Unable to auto-detect latitude column. Available: {list(df.columns)}")
+
+        # 2. Resolve Longitude Column
+        if lon_col and lon_col in df.columns:
+            actual_lon = lon_col
+        else:
+            lon_candidates = ["lon", "lng", "longitude", "pickup_lon", "pickup_longitude", "pu_lon", "x"]
+            actual_lon = next((cols_lower[c] for c in lon_candidates if c in cols_lower), None)
+            if not actual_lon:
+                raise ValueError(f"Unable to auto-detect longitude column. Available: {list(df.columns)}")
+
+        # 3. Resolve Timestamp Column
+        if time_col and time_col in df.columns:
+            actual_time = time_col
+        else:
+            time_candidates = ["datetime", "date/time", "timestamp", "tpep_pickup_datetime", "pickup_datetime", "time", "date"]
+            actual_time = next((cols_lower[c] for c in time_candidates if c in cols_lower), None)
+
+        # 4. Standardize column names
+        rename_map = {actual_lat: "Lat", actual_lon: "Lon"}
+        if actual_time:
+            rename_map[actual_time] = "datetime"
+        df.rename(columns=rename_map, inplace=True)
+
+        # 5. Clean numeric coordinates
+        df["Lat"] = pd.to_numeric(df["Lat"], errors="coerce")
+        df["Lon"] = pd.to_numeric(df["Lon"], errors="coerce")
+        df = df.dropna(subset=["Lat", "Lon"])
+        # Remove (0,0) or invalid lat/lon
+        df = df[(df["Lat"].abs() > 0.001) & (df["Lon"].abs() > 0.001) & (df["Lat"].abs() <= 90.0) & (df["Lon"].abs() <= 180.0)]
+
+        # 6. Parse timestamps
+        if "datetime" in df.columns:
+            df["datetime"] = pd.to_datetime(df["datetime"], errors="coerce")
+            df = df.dropna(subset=["datetime"])
+            df["Date/Time"] = df["datetime"].dt.strftime("%Y-%m-%d %H:%M:%S")
+
+        # 7. Apply City Bounding Box Filtering
+        if filter_bounds and target_city in self.CITY_BOUNDING_BOXES:
+            bbox = self.CITY_BOUNDING_BOXES[target_city]
+            initial_count = len(df)
+            df = df[
+                (df["Lat"] >= bbox["lat_min"]) & (df["Lat"] <= bbox["lat_max"]) &
+                (df["Lon"] >= bbox["lon_min"]) & (df["Lon"] <= bbox["lon_max"])
+            ]
+            logger.info(f"Bounding box filtered {initial_count - len(df)} out-of-bounds GPS records for city='{target_city}'.")
+
+        # 8. Tag Nearest Hotspot Landmark
+        hotspots = self.CHENNAI_HOTSPOTS if target_city == "chennai" else (self.NYC_HOTSPOTS if target_city == "nyc" else None)
+        if tag_nearest_hotspot and hotspots:
+            hs_names = list(hotspots.keys())
+            hs_coords = np.array(list(hotspots.values()))  # Shape: (K, 2) [lat, lon]
+            pts = df[["Lat", "Lon"]].values  # Shape: (N, 2)
+            if len(pts) > 0:
+                # Euclidean distance in lat/lon space for fast hotspot assignment
+                dists = np.sqrt(((pts[:, None, :] - hs_coords[None, :, :]) ** 2).sum(axis=2))
+                nearest_idx = np.argmin(dists, axis=1)
+                df["zone_landmark"] = [hs_names[i] for i in nearest_idx]
+
+        if "city" not in df.columns:
+            df["city"] = target_city
+
+        df = df.reset_index(drop=True)
+        logger.info(f"Parsed and validated {len(df)} GPS trip records for city='{target_city}'.")
+        return df
 
     def generate_synthetic_ola_data(self, n_hours: int = 8760, city: str = "chennai", output_filename: str = "ola_bike_requests.csv") -> pd.DataFrame:
         """
@@ -240,6 +349,7 @@ class OlaDataLoader:
     def load_uber_gps_data(self, file_path: Optional[str] = None, city: str = "chennai", force_synthetic: bool = False) -> pd.DataFrame:
         """
         Loads raw GPS pickup logs centered on target city hotspots (default Chennai).
+        Parses and standardizes coordinates and timestamps via parse_raw_gps_coordinates.
         """
         raw_path = Path(file_path) if file_path else self.raw_dir / "uber_nyc_pickups.csv"
 
@@ -248,19 +358,13 @@ class OlaDataLoader:
         else:
             raw_df = pd.read_csv(raw_path)
 
-        if "Date/Time" in raw_df.columns:
-            raw_df["datetime"] = pd.to_datetime(raw_df["Date/Time"])
-        elif "datetime" in raw_df.columns:
-            raw_df["datetime"] = pd.to_datetime(raw_df["datetime"])
-
-        raw_df = raw_df.dropna(subset=["Lat", "Lon"]).reset_index(drop=True)
+        parsed_df = self.parse_raw_gps_coordinates(raw_df, city=city)
 
         processed_path = self.processed_dir / "uber_gps_pickups_clean.csv"
-        raw_df.to_csv(processed_path, index=False)
-        logger.info(f"Cleaned GPS dataset saved to {processed_path} ({raw_df.shape[0]} records)")
+        parsed_df.to_csv(processed_path, index=False)
+        logger.info(f"Cleaned GPS dataset saved to {processed_path} ({parsed_df.shape[0]} records)")
 
-        return raw_df
-
+        return parsed_df
 
     def generate_synthetic_weather_holiday_data(self, n_hours: int = 8760, output_filename: str = "weather_holiday_features.csv") -> pd.DataFrame:
         """
@@ -274,13 +378,12 @@ class OlaDataLoader:
         dayofweek = dates.dayofweek
         is_weekend = (dayofweek >= 5).astype(int)
 
-        # Public holidays (approx ~12 holiday dates per year)
+        # Public holidays (approx ~10 holiday dates per year)
         holiday_dates = pd.to_datetime([
             "2024-01-01", "2024-01-26", "2024-03-25", "2024-04-11", "2024-05-01",
             "2024-08-15", "2024-10-02", "2024-10-12", "2024-11-01", "2024-12-25"
         ]).date
         is_holiday = np.isin(dates.date, holiday_dates).astype(int)
-
 
         # Rain precipitation depth (mm)
         rain_prob = 0.08
@@ -336,6 +439,54 @@ class OlaDataLoader:
         logger.info(f"NYC TLC benchmark dataset saved to {output_path}")
         return df
 
+    def create_zonal_demand_matrix(
+        self,
+        tlc_df: pd.DataFrame,
+        time_col: str = "tpep_pickup_datetime",
+        zone_col: str = "PULocationID",
+        fill_zero: bool = True,
+        as_pivot: bool = False,
+        total_zones: Optional[int] = None
+    ) -> pd.DataFrame:
+        """
+        Aggregates raw TLC ride-hailing trips into a continuous hourly zonal demand matrix.
+        
+        Parameters:
+            tlc_df: Raw trip DataFrame containing timestamps and zone IDs.
+            time_col: Name of pickup datetime column.
+            zone_col: Name of pickup location zone ID column.
+            fill_zero: If True, fills missing hour-zone combinations with 0 demand.
+            as_pivot: If True, returns a wide format matrix (index=pickup_hour, columns=zones).
+            total_zones: Expected number of discrete zones (e.g. 263 for NYC).
+            
+        Returns:
+            Hourly zonal demand DataFrame (long or wide format).
+        """
+        df = tlc_df.copy()
+        df[time_col] = pd.to_datetime(df[time_col])
+        df["pickup_hour"] = df[time_col].dt.floor("1h")
+
+        # Aggregate counts per (pickup_hour, zone)
+        zonal_agg = df.groupby(["pickup_hour", zone_col]).size().reset_index(name="trip_count")
+        zonal_agg.rename(columns={zone_col: "PULocationID"}, inplace=True)
+
+        if fill_zero:
+            all_hours = pd.date_range(start=df["pickup_hour"].min(), end=df["pickup_hour"].max(), freq="1h")
+            if total_zones:
+                all_zones = np.arange(1, total_zones + 1)
+            else:
+                all_zones = np.sort(df[zone_col].unique())
+
+            full_grid = pd.MultiIndex.from_product([all_hours, all_zones], names=["pickup_hour", "PULocationID"]).to_frame().reset_index(drop=True)
+            zonal_agg = pd.merge(full_grid, zonal_agg, on=["pickup_hour", "PULocationID"], how="left")
+            zonal_agg["trip_count"] = zonal_agg["trip_count"].fillna(0).astype(int)
+
+        if as_pivot:
+            pivot_df = zonal_agg.pivot(index="pickup_hour", columns="PULocationID", values="trip_count").fillna(0).astype(int)
+            return pivot_df
+
+        return zonal_agg
+
     def load_weather_holiday_data(self, file_path: Optional[str] = None, force_synthetic: bool = False) -> pd.DataFrame:
         """
         Loads OpenWeatherMap and Holiday exogenous features.
@@ -352,7 +503,7 @@ class OlaDataLoader:
         logger.info(f"Cleaned Weather/Holiday features saved to {processed_path}")
         return raw_df
 
-    def load_nyc_tlc_data(self, file_path: Optional[str] = None, force_synthetic: bool = False) -> pd.DataFrame:
+    def load_nyc_tlc_data(self, file_path: Optional[str] = None, force_synthetic: bool = False, as_pivot: bool = False) -> pd.DataFrame:
         """
         Loads NYC TLC ride-hailing benchmark dataset and aggregates into hourly zonal demand.
         """
@@ -362,15 +513,11 @@ class OlaDataLoader:
         else:
             raw_df = pd.read_csv(raw_path)
 
-        raw_df["tpep_pickup_datetime"] = pd.to_datetime(raw_df["tpep_pickup_datetime"])
-        raw_df["pickup_hour"] = raw_df["tpep_pickup_datetime"].dt.floor("1h")
-
-        # Aggregate zonal demand matrix
-        zonal_demand = raw_df.groupby(["pickup_hour", "PULocationID"]).size().reset_index(name="trip_count")
+        zonal_demand = self.create_zonal_demand_matrix(raw_df, fill_zero=True, as_pivot=as_pivot)
 
         processed_path = self.processed_dir / "nyc_tlc_benchmark_clean.csv"
-        zonal_demand.to_csv(processed_path, index=False)
-        logger.info(f"Cleaned NYC TLC benchmark zonal demand saved to {processed_path}")
+        zonal_demand.to_csv(processed_path, index=as_pivot)
+        logger.info(f"Cleaned NYC TLC benchmark zonal demand saved to {processed_path} (shape: {zonal_demand.shape})")
         return zonal_demand
 
     def get_data_summary(self, df: pd.DataFrame) -> Dict[str, Any]:
@@ -392,7 +539,16 @@ class OlaDataLoader:
                 "max": int(df["cnt"].max()),
                 "zero_count": int((df["cnt"] == 0).sum())
             }
+        elif "trip_count" in df.columns:
+            summary["target_stats"] = {
+                "mean": float(df["trip_count"].mean()),
+                "std": float(df["trip_count"].std()),
+                "min": int(df["trip_count"].min()),
+                "max": int(df["trip_count"].max()),
+                "zero_count": int((df["trip_count"] == 0).sum())
+            }
         return summary
+
 
 if __name__ == "__main__":
     loader = OlaDataLoader(default_city="chennai")
