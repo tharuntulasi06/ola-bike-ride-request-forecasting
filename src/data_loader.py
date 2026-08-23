@@ -221,13 +221,9 @@ class OlaDataLoader:
 
     def load_ola_data(self, file_path: Optional[str] = None, city: str = "chennai", force_synthetic: bool = False) -> pd.DataFrame:
         proc_parquet = self.processed_dir / "ola_bike_requests_clean.parquet"
-        proc_csv = self.processed_dir / "ola_bike_requests_clean.csv"
 
-        if not force_synthetic:
-            if proc_parquet.exists():
-                return pd.read_parquet(proc_parquet)
-            elif proc_csv.exists():
-                return pd.read_csv(proc_csv)
+        if not force_synthetic and proc_parquet.exists():
+            return pd.read_parquet(proc_parquet)
 
         raw_df = None
         if not force_synthetic:
@@ -238,18 +234,13 @@ class OlaDataLoader:
 
         clean_df = self.preprocess_ola_data(raw_df)
         clean_df.to_parquet(proc_parquet, index=False)
-        clean_df.to_csv(proc_csv, index=False)
         return clean_df
 
     def load_uber_gps_data(self, file_path: Optional[str] = None, city: str = "chennai", force_synthetic: bool = False) -> pd.DataFrame:
         proc_parquet = self.processed_dir / "uber_gps_pickups_clean.parquet"
-        proc_csv = self.processed_dir / "uber_gps_pickups_clean.csv"
 
-        if not force_synthetic:
-            if proc_parquet.exists():
-                return pd.read_parquet(proc_parquet)
-            elif proc_csv.exists():
-                return pd.read_csv(proc_csv)
+        if not force_synthetic and proc_parquet.exists():
+            return pd.read_parquet(proc_parquet)
 
         raw_df = None
         if not force_synthetic:
@@ -268,8 +259,8 @@ class OlaDataLoader:
             raw_df = raw_df[mask].reset_index(drop=True)
 
         raw_df.to_parquet(proc_parquet, index=False)
-        raw_df.to_csv(proc_csv, index=False)
         return raw_df
+
 
     def parse_raw_gps_coordinates(
         self, df: pd.DataFrame, city: str = "chennai", filter_bounds: bool = True, tag_nearest_hotspot: bool = True
@@ -393,13 +384,9 @@ class OlaDataLoader:
 
     def load_weather_holiday_data(self, file_path: Optional[str] = None, force_synthetic: bool = False) -> pd.DataFrame:
         proc_parquet = self.processed_dir / "weather_holiday_clean.parquet"
-        proc_csv = self.processed_dir / "weather_holiday_clean.csv"
 
-        if not force_synthetic:
-            if proc_parquet.exists():
-                return pd.read_parquet(proc_parquet)
-            elif proc_csv.exists():
-                return pd.read_csv(proc_csv)
+        if not force_synthetic and proc_parquet.exists():
+            return pd.read_parquet(proc_parquet)
 
         raw_df = None
         if not force_synthetic:
@@ -410,18 +397,13 @@ class OlaDataLoader:
 
         raw_df["datetime"] = pd.to_datetime(raw_df["datetime"])
         raw_df.to_parquet(proc_parquet, index=False)
-        raw_df.to_csv(proc_csv, index=False)
         return raw_df
 
     def load_nyc_tlc_data(self, file_path: Optional[str] = None, force_synthetic: bool = False) -> pd.DataFrame:
         proc_parquet = self.processed_dir / "nyc_tlc_benchmark_clean.parquet"
-        proc_csv = self.processed_dir / "nyc_tlc_benchmark_clean.csv"
 
-        if not force_synthetic:
-            if proc_parquet.exists():
-                return pd.read_parquet(proc_parquet)
-            elif proc_csv.exists():
-                return pd.read_csv(proc_csv)
+        if not force_synthetic and proc_parquet.exists():
+            return pd.read_parquet(proc_parquet)
 
         raw_df = None
         if not force_synthetic:
@@ -435,8 +417,8 @@ class OlaDataLoader:
 
         zonal_demand = raw_df.groupby(["pickup_hour", "PULocationID"]).size().reset_index(name="trip_count")
         zonal_demand.to_parquet(proc_parquet, index=False)
-        zonal_demand.to_csv(proc_csv, index=False)
         return zonal_demand
+
 
     def get_data_summary(self, df: pd.DataFrame) -> Dict[str, Any]:
         time_col = "datetime" if "datetime" in df.columns else ("pickup_hour" if "pickup_hour" in df.columns else None)

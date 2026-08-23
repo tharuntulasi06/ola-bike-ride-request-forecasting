@@ -220,11 +220,18 @@ To ensure robust spatial clustering, temporal accuracy, and cross-city generaliz
 | Column Name | Data Type | Description |
 | :--- | :--- | :--- |
 | `timestamp` | Datetime | Hourly temporal matching key |
-| `rain_1h` | Continuous | Hourly rainfall precipitation depth (mm) |
-| `visibility` | Continuous | Meteorological atmospheric visibility distance (meters) |
-| `pressure` | Continuous | Sea-level barometric pressure (hPa) |
-| `is_holiday` | Binary Flag | Public / bank holiday indicator (0: Regular, 1: Holiday) |
-| `is_weekend` | Binary Flag | Weekend day indicator (0: Weekday, 1: Weekend) |
+| `rain_1h` | Continuous | Hourly precipitation depth (mm) |
+| `visibility` | Continuous | Atmospheric visibility range (meters) |
+| `pressure` | Continuous | Barometric pressure (hPa) |
+| `is_holiday` | Binary (0/1) | Indian & Tamil Nadu public holiday marker |
+| `is_weekend` | Binary (0/1) | Weekend operational indicator |
+
+---
+
+### 8.5 Data Storage Architecture & Ingestion Mechanics (Parquet + Direct Kaggle API)
+* **Apache Parquet Columnar Storage (`pyarrow`)**: All processed feature matrices and target datasets are stored exclusively in high-performance `.parquet` format (`ola_bike_requests_clean.parquet`, `uber_gps_pickups_clean.parquet`, `weather_holiday_clean.parquet`, `spatiotemporal_features_clean.parquet`). Parquet preserves native data types (`datetime64`, `int32`, `float64`), enables $10\times\text{--}50\times$ faster read performance, and reduces storage size by 80% compared to legacy CSV files.
+* **Direct Kaggle API Ingestion (`kagglehub`)**: Datasets are fetched dynamically in Python code using `kagglehub.dataset_download()`, retrieving raw datasets directly into local memory and machine cache.
+* **Zero Git Data Tracking**: To enforce senior machine learning engineering standards, `.gitignore` excludes all raw and processed dataset files in `data/raw/` and `data/processed/`. The Git repository tracks only executable source code, tests, and documentation, keeping repository clone size lightweight (< 3 MB).
 
 ---
 

@@ -69,14 +69,18 @@ This repository provides an end-to-end production-grade machine learning system 
 
 ---
 
-## 📂 Multi-Dataset Strategy
+## 📂 Multi-Dataset Strategy & Data Engineering
 
 | Dataset | Type / Source | Volume | Primary Role |
 | :--- | :--- | :--- | :--- |
 | **Ola Bike Ride Request** | Kaggle (`palvinder2006/ola-bike-ride-request`) | ~17,379 hourly records | Primary target demand forecasting ($t+1 \dots t+4$) & weather sensitivity |
-| **Uber NYC GPS Pickups** | Kaggle / Uber Movement | ~4.5M raw trip logs | Granular Lat/Lon evaluation for `MiniBatchKMeans` spatial clustering |
-| **NYC TLC Taxi & FHV** | NYC Open Data Portal | ~10M trip records | Cross-city scalability benchmark across 263 discrete taxi zones |
-| **OpenWeatherMap & Holiday** | OpenWeather API & Public Calendar | Hourly continuous feed | Exogenous precipitation, visibility, barometric pressure & holiday flags |
+| **Uber NYC GPS Pickups** | Kaggle (`fivethirtyeight/uber-pickups-in-new-york-city`) | ~4.5M raw trip logs | Granular Lat/Lon evaluation for `MiniBatchKMeans` spatial clustering |
+| **NYC TLC Taxi & FHV** | Kaggle (`anaghbar81/tlc-trip-record-data`) | ~10M trip records | Cross-city scalability benchmark across 263 discrete taxi zones |
+| **OpenWeatherMap & Holiday** | Kaggle (`muthuj7/weather-dataset`) | Hourly continuous feed | Exogenous precipitation, visibility, barometric pressure & holiday flags |
+
+> ⚡ **Direct Kaggle API & Apache Parquet Storage**:
+> Datasets are dynamically fetched at runtime via `kagglehub.dataset_download()` and processed into compressed **Apache Parquet (`.parquet`)** format (`pyarrow`). **Zero data files are tracked in Git**, maintaining a lightweight repository size (< 3 MB).
+
 
 ---
 
