@@ -7,10 +7,11 @@ scikit-learn>=1.3.0
 joblib>=1.3.0
 statsmodels>=0.14.0
 
-# Gradient Boosting & Hyperparameter Tuning
+# Gradient Boosting, Deep Learning & Hyperparameter Tuning
 xgboost>=2.0.0
 lightgbm>=4.0.0
 catboost>=1.2.0
+torch>=2.0.0
 optuna>=3.3.0
 
 # Backend Inference Microservice
