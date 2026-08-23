@@ -249,14 +249,27 @@ class OlaDataLoader:
         if raw_df is None:
             raw_df = self.generate_synthetic_gps_data(city=city, output_filename="uber_nyc_pickups.parquet")
 
-        dt_col = "Date/Time" if "Date/Time" in raw_df.columns else "datetime"
+        dt_cols = [c for c in raw_df.columns if any(k in c.lower() for k in ["date", "time", "timestamp"])]
+        dt_col = dt_cols[0] if dt_cols else raw_df.columns[0]
         raw_df["datetime"] = pd.to_datetime(raw_df[dt_col])
-        raw_df = raw_df.dropna(subset=["Lat", "Lon"]).reset_index(drop=True)
 
-        if city.lower() in self.CITY_BOUNDS:
-            min_lat, max_lat, min_lon, max_lon = self.CITY_BOUNDS[city.lower()]
-            mask = (raw_df["Lat"] >= min_lat) & (raw_df["Lat"] <= max_lat) & (raw_df["Lon"] >= min_lon) & (raw_df["Lon"] <= max_lon)
-            raw_df = raw_df[mask].reset_index(drop=True)
+        lat_cols = [c for c in raw_df.columns if any(k in c.lower() for k in ["lat", "latitude"])]
+        lon_cols = [c for c in raw_df.columns if any(k in c.lower() for k in ["lon", "lng", "longitude"])]
+
+        if lat_cols and lon_cols:
+            raw_df.rename(columns={lat_cols[0]: "Lat", lon_cols[0]: "Lon"}, inplace=True)
+
+        if "Lat" in raw_df.columns and "Lon" in raw_df.columns:
+            raw_df = raw_df.dropna(subset=["Lat", "Lon"]).reset_index(drop=True)
+            if city.lower() in self.CITY_BOUNDS:
+                min_lat, max_lat, min_lon, max_lon = self.CITY_BOUNDS[city.lower()]
+                mask = (raw_df["Lat"] >= min_lat) & (raw_df["Lat"] <= max_lat) & (raw_df["Lon"] >= min_lon) & (raw_df["Lon"] <= max_lon)
+                filtered_df = raw_df[mask].reset_index(drop=True)
+                if len(filtered_df) > 0:
+                    raw_df = filtered_df
+                else:
+                    logger.warning(f"Raw GPS dataset coordinates were outside '{city}' bounds. Generating synthetic spatial coordinates for '{city}'...")
+                    raw_df = self.generate_synthetic_gps_data(n_samples=len(raw_df) if len(raw_df) > 0 else 50000, city=city, output_filename="gps_pickups.parquet")
 
         raw_df.to_parquet(proc_parquet, index=False)
         return raw_df
@@ -395,7 +408,11 @@ class OlaDataLoader:
         if raw_df is None:
             raw_df = self.generate_synthetic_weather_holiday_data(output_filename="weather_holiday_features.parquet")
 
-        raw_df["datetime"] = pd.to_datetime(raw_df["datetime"])
+        dt_cols = [c for c in raw_df.columns if any(k in c.lower() for k in ["date", "time", "timestamp"])]
+        dt_col = dt_cols[0] if dt_cols else raw_df.columns[0]
+        raw_df["datetime"] = pd.to_datetime(raw_df[dt_col], utc=True).dt.tz_localize(None)
+
+
         raw_df.to_parquet(proc_parquet, index=False)
         return raw_df
 
