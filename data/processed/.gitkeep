@@ -1,1 +1,1 @@
-# Keep directory in git
+# Track directory in Git while ignoring processed parquet data files

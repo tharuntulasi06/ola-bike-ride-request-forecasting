@@ -132,7 +132,8 @@ class FeatureBuilder:
         self,
         ola_df: pd.DataFrame,
         weather_df: Optional[pd.DataFrame] = None,
-        drop_na: bool = True
+        drop_na: bool = True,
+        save_parquet_path: Optional[str] = None
     ) -> pd.DataFrame:
         df = ola_df.copy()
 
@@ -153,7 +154,14 @@ class FeatureBuilder:
         if drop_na:
             df = df.dropna().reset_index(drop=True)
 
+        if save_parquet_path:
+            out_file = Path(save_parquet_path)
+            out_file.parent.mkdir(parents=True, exist_ok=True)
+            df.to_parquet(out_file, index=False)
+            logger.info(f"Feature matrix saved to Parquet: {out_file}")
+
         return df
+
 
 
 if __name__ == "__main__":

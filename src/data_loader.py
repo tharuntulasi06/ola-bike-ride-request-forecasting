@@ -6,6 +6,13 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
+# Attempt kagglehub import for dynamic Kaggle dataset downloading
+try:
+    import kagglehub
+    HAS_KAGGLEHUB = True
+except ImportError:
+    HAS_KAGGLEHUB = False
+
 
 class OlaDataLoader:
     """Production data pipeline for spatiotemporal micro-mobility demand forecasting."""
@@ -34,6 +41,13 @@ class OlaDataLoader:
         "nyc": (40.5, 40.9, -74.25, -73.70),
     }
 
+    KAGGLE_HANDLES = {
+        "ola": "palvinder2006/ola-bike-ride-request",
+        "uber_gps": "fivethirtyeight/uber-pickups-in-new-york-city",
+        "nyc_tlc": "anaghbar81/tlc-trip-record-data",
+        "weather": "muthuj7/weather-dataset",
+    }
+
     def __init__(self, data_dir: Optional[str] = None, default_city: str = "chennai"):
         self.data_dir = Path(data_dir) if data_dir else self.DEFAULT_DATA_DIR
         self.default_city = default_city.lower()
@@ -43,8 +57,28 @@ class OlaDataLoader:
         self.raw_dir.mkdir(parents=True, exist_ok=True)
         self.processed_dir.mkdir(parents=True, exist_ok=True)
 
+    def fetch_from_kaggle(self, dataset_handle: str) -> Optional[pd.DataFrame]:
+        """Dynamically fetches public Kaggle dataset directly via kagglehub API."""
+        if not HAS_KAGGLEHUB:
+            logger.warning("kagglehub package is not installed. Falling back to local/synthetic pipeline.")
+            return None
+
+        try:
+            logger.info(f"Fetching dataset directly from Kaggle API handle: '{dataset_handle}'...")
+            download_path = Path(kagglehub.dataset_download(dataset_handle))
+            data_files = list(download_path.glob("*.parquet")) + list(download_path.glob("*.csv"))
+            if data_files:
+                target_file = data_files[0]
+                logger.info(f"Successfully downloaded {target_file.name} from Kaggle cache.")
+                if target_file.suffix == ".parquet":
+                    return pd.read_parquet(target_file)
+                return pd.read_csv(target_file)
+        except Exception as e:
+            logger.warning(f"Kaggle API fetch for '{dataset_handle}' encountered an issue: {e}. Falling back...")
+        return None
+
     def generate_synthetic_ola_data(
-        self, n_hours: int = 8760, city: str = "chennai", output_filename: str = "ola_bike_requests.csv"
+        self, n_hours: int = 8760, city: str = "chennai", output_filename: str = "ola_bike_requests.parquet"
     ) -> pd.DataFrame:
         np.random.seed(42)
         dates = pd.date_range("2024-01-01 00:00:00", periods=n_hours, freq="1h")
@@ -110,11 +144,14 @@ class OlaDataLoader:
         )
 
         out_path = self.raw_dir / output_filename
-        df.to_csv(out_path, index=False)
+        if out_path.suffix == ".parquet":
+            df.to_parquet(out_path, index=False)
+        else:
+            df.to_csv(out_path, index=False)
         return df
 
     def generate_synthetic_gps_data(
-        self, n_samples: int = 50000, city: str = "chennai", output_filename: str = "uber_nyc_pickups.csv"
+        self, n_samples: int = 50000, city: str = "chennai", output_filename: str = "gps_pickups.parquet"
     ) -> pd.DataFrame:
         np.random.seed(42)
         start = pd.Timestamp("2024-04-01 00:00:00")
@@ -141,7 +178,10 @@ class OlaDataLoader:
         )
 
         out_path = self.raw_dir / output_filename
-        df.to_csv(out_path, index=False)
+        if out_path.suffix == ".parquet":
+            df.to_parquet(out_path, index=False)
+        else:
+            df.to_csv(out_path, index=False)
         return df
 
     def preprocess_ola_data(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -180,22 +220,43 @@ class OlaDataLoader:
         return df
 
     def load_ola_data(self, file_path: Optional[str] = None, city: str = "chennai", force_synthetic: bool = False) -> pd.DataFrame:
-        raw_path = Path(file_path) if file_path else self.raw_dir / "ola_bike_requests.csv"
-        if force_synthetic or not raw_path.exists():
-            raw_df = self.generate_synthetic_ola_data(city=city, output_filename=raw_path.name)
-        else:
-            raw_df = pd.read_csv(raw_path)
+        proc_parquet = self.processed_dir / "ola_bike_requests_clean.parquet"
+        proc_csv = self.processed_dir / "ola_bike_requests_clean.csv"
+
+        if not force_synthetic:
+            if proc_parquet.exists():
+                return pd.read_parquet(proc_parquet)
+            elif proc_csv.exists():
+                return pd.read_csv(proc_csv)
+
+        raw_df = None
+        if not force_synthetic:
+            raw_df = self.fetch_from_kaggle(self.KAGGLE_HANDLES["ola"])
+
+        if raw_df is None:
+            raw_df = self.generate_synthetic_ola_data(city=city, output_filename="ola_bike_requests.parquet")
 
         clean_df = self.preprocess_ola_data(raw_df)
-        clean_df.to_csv(self.processed_dir / "ola_bike_requests_clean.csv", index=False)
+        clean_df.to_parquet(proc_parquet, index=False)
+        clean_df.to_csv(proc_csv, index=False)
         return clean_df
 
     def load_uber_gps_data(self, file_path: Optional[str] = None, city: str = "chennai", force_synthetic: bool = False) -> pd.DataFrame:
-        raw_path = Path(file_path) if file_path else self.raw_dir / "uber_nyc_pickups.csv"
-        if force_synthetic or not raw_path.exists():
-            raw_df = self.generate_synthetic_gps_data(city=city, output_filename=raw_path.name)
-        else:
-            raw_df = pd.read_csv(raw_path)
+        proc_parquet = self.processed_dir / "uber_gps_pickups_clean.parquet"
+        proc_csv = self.processed_dir / "uber_gps_pickups_clean.csv"
+
+        if not force_synthetic:
+            if proc_parquet.exists():
+                return pd.read_parquet(proc_parquet)
+            elif proc_csv.exists():
+                return pd.read_csv(proc_csv)
+
+        raw_df = None
+        if not force_synthetic:
+            raw_df = self.fetch_from_kaggle(self.KAGGLE_HANDLES["uber_gps"])
+
+        if raw_df is None:
+            raw_df = self.generate_synthetic_gps_data(city=city, output_filename="uber_nyc_pickups.parquet")
 
         dt_col = "Date/Time" if "Date/Time" in raw_df.columns else "datetime"
         raw_df["datetime"] = pd.to_datetime(raw_df[dt_col])
@@ -206,11 +267,11 @@ class OlaDataLoader:
             mask = (raw_df["Lat"] >= min_lat) & (raw_df["Lat"] <= max_lat) & (raw_df["Lon"] >= min_lon) & (raw_df["Lon"] <= max_lon)
             raw_df = raw_df[mask].reset_index(drop=True)
 
-        raw_df.to_csv(self.processed_dir / "uber_gps_pickups_clean.csv", index=False)
+        raw_df.to_parquet(proc_parquet, index=False)
+        raw_df.to_csv(proc_csv, index=False)
         return raw_df
 
     def parse_raw_gps_coordinates(
-
         self, df: pd.DataFrame, city: str = "chennai", filter_bounds: bool = True, tag_nearest_hotspot: bool = True
     ) -> pd.DataFrame:
         df = df.copy()
@@ -224,7 +285,6 @@ class OlaDataLoader:
             raise KeyError("Could not identify Lat/Lon columns in input DataFrame.")
 
         df.rename(columns={lat_cols[0]: "Lat", lon_cols[0]: "Lon"}, inplace=True)
-
         df = df.dropna(subset=["Lat", "Lon"]).reset_index(drop=True)
 
         if filter_bounds and city.lower() in self.CITY_BOUNDS:
@@ -267,9 +327,8 @@ class OlaDataLoader:
         return counts
 
     def generate_synthetic_weather_holiday_data(
-        self, n_hours: int = 8760, output_filename: str = "weather_holiday_features.csv"
+        self, n_hours: int = 8760, output_filename: str = "weather_holiday_features.parquet"
     ) -> pd.DataFrame:
-
         np.random.seed(42)
         dates = pd.date_range("2024-01-01 00:00:00", periods=n_hours, freq="1h")
         is_weekend = (dates.dayofweek >= 5).astype(int)
@@ -296,10 +355,14 @@ class OlaDataLoader:
             }
         )
 
-        df.to_csv(self.raw_dir / output_filename, index=False)
+        out_path = self.raw_dir / output_filename
+        if out_path.suffix == ".parquet":
+            df.to_parquet(out_path, index=False)
+        else:
+            df.to_csv(out_path, index=False)
         return df
 
-    def generate_synthetic_nyc_tlc_data(self, n_samples: int = 20000, output_filename: str = "nyc_tlc_trips.csv") -> pd.DataFrame:
+    def generate_synthetic_nyc_tlc_data(self, n_samples: int = 20000, output_filename: str = "nyc_tlc_trips.parquet") -> pd.DataFrame:
         np.random.seed(42)
         start = pd.Timestamp("2024-04-01 00:00:00")
         timestamps = start + pd.to_timedelta(np.random.randint(0, 30 * 24 * 3600, size=n_samples), unit="s")
@@ -321,32 +384,58 @@ class OlaDataLoader:
             }
         )
 
-        df.to_csv(self.raw_dir / output_filename, index=False)
+        out_path = self.raw_dir / output_filename
+        if out_path.suffix == ".parquet":
+            df.to_parquet(out_path, index=False)
+        else:
+            df.to_csv(out_path, index=False)
         return df
 
     def load_weather_holiday_data(self, file_path: Optional[str] = None, force_synthetic: bool = False) -> pd.DataFrame:
-        raw_path = Path(file_path) if file_path else self.raw_dir / "weather_holiday_features.csv"
-        if force_synthetic or not raw_path.exists():
-            raw_df = self.generate_synthetic_weather_holiday_data(output_filename=raw_path.name)
-        else:
-            raw_df = pd.read_csv(raw_path)
+        proc_parquet = self.processed_dir / "weather_holiday_clean.parquet"
+        proc_csv = self.processed_dir / "weather_holiday_clean.csv"
+
+        if not force_synthetic:
+            if proc_parquet.exists():
+                return pd.read_parquet(proc_parquet)
+            elif proc_csv.exists():
+                return pd.read_csv(proc_csv)
+
+        raw_df = None
+        if not force_synthetic:
+            raw_df = self.fetch_from_kaggle(self.KAGGLE_HANDLES["weather"])
+
+        if raw_df is None:
+            raw_df = self.generate_synthetic_weather_holiday_data(output_filename="weather_holiday_features.parquet")
 
         raw_df["datetime"] = pd.to_datetime(raw_df["datetime"])
-        raw_df.to_csv(self.processed_dir / "weather_holiday_clean.csv", index=False)
+        raw_df.to_parquet(proc_parquet, index=False)
+        raw_df.to_csv(proc_csv, index=False)
         return raw_df
 
     def load_nyc_tlc_data(self, file_path: Optional[str] = None, force_synthetic: bool = False) -> pd.DataFrame:
-        raw_path = Path(file_path) if file_path else self.raw_dir / "nyc_tlc_trips.csv"
-        if force_synthetic or not raw_path.exists():
-            raw_df = self.generate_synthetic_nyc_tlc_data(output_filename=raw_path.name)
-        else:
-            raw_df = pd.read_csv(raw_path)
+        proc_parquet = self.processed_dir / "nyc_tlc_benchmark_clean.parquet"
+        proc_csv = self.processed_dir / "nyc_tlc_benchmark_clean.csv"
+
+        if not force_synthetic:
+            if proc_parquet.exists():
+                return pd.read_parquet(proc_parquet)
+            elif proc_csv.exists():
+                return pd.read_csv(proc_csv)
+
+        raw_df = None
+        if not force_synthetic:
+            raw_df = self.fetch_from_kaggle(self.KAGGLE_HANDLES["nyc_tlc"])
+
+        if raw_df is None:
+            raw_df = self.generate_synthetic_nyc_tlc_data(output_filename="nyc_tlc_trips.parquet")
 
         raw_df["tpep_pickup_datetime"] = pd.to_datetime(raw_df["tpep_pickup_datetime"])
         raw_df["pickup_hour"] = raw_df["tpep_pickup_datetime"].dt.floor("1h")
 
         zonal_demand = raw_df.groupby(["pickup_hour", "PULocationID"]).size().reset_index(name="trip_count")
-        zonal_demand.to_csv(self.processed_dir / "nyc_tlc_benchmark_clean.csv", index=False)
+        zonal_demand.to_parquet(proc_parquet, index=False)
+        zonal_demand.to_csv(proc_csv, index=False)
         return zonal_demand
 
     def get_data_summary(self, df: pd.DataFrame) -> Dict[str, Any]:
