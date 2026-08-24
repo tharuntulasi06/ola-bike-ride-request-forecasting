@@ -17,7 +17,9 @@ build/
 htmlcov/
 
 # Data & Serialized Artifacts
+catboost_info/
 data/raw/*.csv
+
 data/raw/*.parquet
 data/processed/*.csv
 data/processed/*.parquet
