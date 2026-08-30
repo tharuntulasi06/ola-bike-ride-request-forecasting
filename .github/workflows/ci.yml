@@ -25,16 +25,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Execute Automated Unit Test Suite
-        run: |
-          python -m pytest tests/ -v
-
-      - name: Verify Feature Engineering & Data Loader Pipelines
-        run: |
-          python src/data_loader.py
-          python src/feature_builder.py
-
-      - name: Verify Model Training & Evaluation Suite
+      - name: Build Feature Matrix & Train Model Artifacts
         run: |
           python src/train.py
           python src/evaluate.py
+
+      - name: Execute Automated Unit Test Suite
+        run: |
+          python -m pytest tests/ -v

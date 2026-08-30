@@ -47,11 +47,30 @@ trainer_cache: Dict[str, Any] = {"trainer": None, "features_df": None}
 
 
 def load_model_and_features():
+    if not DATA_PATH.exists():
+        logger.info("Features matrix missing. Building synthetic feature matrix for API server...")
+        loader = OlaDataLoader(default_city="chennai")
+        ola_df = loader.load_ola_data(force_synthetic=True)
+        gps_df = loader.load_uber_gps_data(force_synthetic=True)
+        weather_df = loader.load_weather_holiday_data(force_synthetic=True)
+        builder = FeatureBuilder(n_clusters=6, random_state=42)
+        builder.fit_spatial_clusters(gps_df)
+        builder.transform(ola_df, weather_df=weather_df, save_parquet_path=str(DATA_PATH))
+
+    if not MODEL_PATH.exists():
+        logger.info("Model checkpoint missing. Training GBDT Trio model for API server...")
+        features_df = pd.read_parquet(DATA_PATH)
+        trainer = GBDTTrioTrainer(random_state=42)
+        trainer.fit(features_df, horizons=[1, 2, 3, 4], n_trials=2)
+        MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
+        trainer.save(str(MODEL_PATH))
+
     if trainer_cache["trainer"] is None and MODEL_PATH.exists():
         trainer_cache["trainer"] = GBDTTrioTrainer.load(str(MODEL_PATH))
 
     if trainer_cache["features_df"] is None and DATA_PATH.exists():
         trainer_cache["features_df"] = pd.read_parquet(DATA_PATH)
+
 
 
 @app.on_event("startup")
