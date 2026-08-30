@@ -21,6 +21,8 @@ from api.schemas import (
 )
 from src.trainer import GBDTTrioTrainer
 from src.data_loader import OlaDataLoader
+from src.feature_builder import FeatureBuilder
+
 
 logger = logging.getLogger(__name__)
 
