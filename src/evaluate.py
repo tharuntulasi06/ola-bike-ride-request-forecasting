@@ -71,6 +71,50 @@ class ModelEvaluator:
         cols = ["horizon", "wape", "mae", "rmse", "r2", "zero_count_residual"]
         return report_df[cols]
 
+    def evaluate_segmented_performance(self, features_df: pd.DataFrame, horizon: int = 1) -> Dict[str, Any]:
+        """Production Segmented Evaluation: Evaluates WAPE/MAE separately for Peak, Off-Peak, and Zone-by-Zone."""
+        if self.trainer is None:
+            raise FileNotFoundError("Model trainer not loaded.")
+
+        feature_cols = self.trainer.feature_names
+        X_test = features_df[feature_cols]
+        y_true = features_df[f"target_h{horizon}"].values
+        y_pred = self.trainer.predict_horizon(X_test, horizon=horizon)
+
+        df = features_df.copy()
+        df["y_true"] = y_true
+        df["y_pred"] = y_pred
+
+        # 1. Temporal Segmentation: Peak (8-10 AM, 5-8 PM) vs Off-Peak (1-4 AM)
+        if "hour" in df.columns:
+            peak_mask = df["hour"].isin([8, 9, 10, 17, 18, 19, 20])
+            offpeak_mask = df["hour"].isin([1, 2, 3, 4])
+        else:
+            peak_mask = np.ones(len(df), dtype=bool)
+            offpeak_mask = np.zeros(len(df), dtype=bool)
+
+        peak_metrics = self.evaluate_horizon_metrics(df.loc[peak_mask, "y_true"], df.loc[peak_mask, "y_pred"])
+        offpeak_metrics = self.evaluate_horizon_metrics(df.loc[offpeak_mask, "y_true"], df.loc[offpeak_mask, "y_pred"])
+
+        # 2. Spatial Segmentation: Zone-by-Zone evaluation
+        zone_metrics = {}
+        if "cluster_id" in df.columns:
+            for zone_id in sorted(df["cluster_id"].unique()):
+                zone_mask = df["cluster_id"] == zone_id
+                zone_metrics[f"zone_{zone_id}"] = self.evaluate_horizon_metrics(
+                    df.loc[zone_mask, "y_true"], df.loc[zone_mask, "y_pred"]
+                )
+
+        return {
+            "horizon": f"t+{horizon}",
+            "segmented_segments": {
+                "peak_hours": peak_metrics,
+                "offpeak_night_hours": offpeak_metrics,
+            },
+            "zone_breakdown": zone_metrics,
+        }
+
+
     def get_feature_importances(self, horizon: int = 1) -> pd.DataFrame:
         if self.trainer is None:
             raise FileNotFoundError("Model trainer not loaded.")
