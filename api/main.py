@@ -157,9 +157,10 @@ def get_db_spatial_summary():
 
 @app.get("/api/v1/analytics/metrics")
 def get_evaluation_metrics():
-    json_path = Path("reports/evaluation_results.json")
+    json_path = Path("results/evaluation_results.json")
     if not json_path.exists():
         raise HTTPException(status_code=404, detail="Evaluation results report not found.")
+
 
     with open(json_path, "r") as f:
         metrics_data = json.load(f)

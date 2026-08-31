@@ -23,12 +23,13 @@ logger = logging.getLogger(__name__)
 
 def generate_explainability_artifacts(
     model_path: str = "models/gbdt_trio_model.joblib",
-    reports_dir: str = "reports",
+    results_dir: str = "results",
 ) -> None:
     """Generates production SHAP / Feature Importance plots and evaluation report artifacts."""
-    reports_path = Path(reports_dir)
-    figures_path = reports_path / "figures"
+    results_path = Path(results_dir)
+    figures_path = results_path / "figures"
     figures_path.mkdir(parents=True, exist_ok=True)
+
 
     # 1. Load Data & Model
     data_file = Path("data/processed/spatiotemporal_features_clean.parquet")
@@ -118,7 +119,7 @@ def generate_explainability_artifacts(
 
     # 6. Export Evaluation Results JSON & Markdown Report
     eval_report = evaluator.generate_evaluation_report(features_df)
-    json_path = reports_path / "evaluation_results.json"
+    json_path = results_path / "evaluation_results.json"
     results_dict = {
         "project": "Ola Bike Ride Request Demand Forecasting",
         "city": "chennai",
@@ -128,7 +129,7 @@ def generate_explainability_artifacts(
         json.dump(results_dict, f, indent=2)
     logger.info(f"Evaluation metrics JSON saved to: {json_path}")
 
-    md_path = reports_path / "evaluation_report.md"
+    md_path = results_path / "evaluation_report.md"
     md_content = f"# 📊 Model Evaluation & Metrics Report\n\n"
     md_content += f"## Benchmark Metrics Across Forecast Horizons (t+1 .. t+4)\n\n```text\n"
     md_content += eval_report.to_string(index=False)
@@ -140,9 +141,9 @@ def generate_explainability_artifacts(
     logger.info(f"Evaluation Markdown report saved to: {md_path}")
 
 
-
 if __name__ == "__main__":
     generate_explainability_artifacts()
     print("\n========================================================")
-    print("=== Explainability Artifacts Generated in reports/ ===")
+    print("=== Explainability Artifacts Generated in results/ ===")
     print("========================================================")
+
