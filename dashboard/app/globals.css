@@ -1,0 +1,102 @@
+@import "leaflet/dist/leaflet.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 0, 0, 0;
+  --background-end-rgb: 0, 0, 0;
+}
+
+body {
+  color: #FFFFFF;
+  background: #000000;
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+}
+
+/* Monochrome Liquid Glass Component Styling */
+.liquid-glass {
+  background: rgba(10, 10, 10, 0.7);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.7);
+  transition: all 0.2s ease-in-out;
+}
+
+.liquid-glass:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 12px 40px 0 rgba(255, 255, 255, 0.05);
+}
+
+.liquid-glass-active {
+  background: rgba(20, 20, 20, 0.85);
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
+}
+
+/* Liquid Button Styling */
+.liquid-btn {
+  background: #FFFFFF;
+  color: #000000;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.liquid-btn:hover {
+  background: #E5E5E5;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+}
+
+.liquid-btn-secondary {
+  background: #171717;
+  color: #FFFFFF;
+  border: 1px solid #333333;
+  transition: all 0.15s ease;
+}
+
+.liquid-btn-secondary:hover {
+  background: #262626;
+  border-color: #52525B;
+}
+
+/* Custom Leaflet Map styling for Black & White Liquid Glass theme */
+.leaflet-container {
+  background-color: #000000 !important;
+  border-radius: 12px;
+  filter: grayscale(100%) invert(100%) contrast(125%);
+}
+
+.leaflet-popup-content-wrapper {
+  background: rgba(10, 10, 10, 0.95) !important;
+  color: #fff !important;
+  border: 1px solid #ffffff !important;
+  backdrop-filter: blur(12px);
+  filter: grayscale(0%) invert(0%) !important;
+}
+
+.leaflet-popup-tip {
+  background: rgba(10, 10, 10, 0.95) !important;
+  filter: grayscale(0%) invert(0%) !important;
+}
+
+@keyframes whitePulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.8);
+  }
+  70% {
+    box-shadow: 0 0 0 16px rgba(255, 255, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+}
+
+.white-pulse {
+  animation: whitePulse 2s infinite;
+  border-radius: 50%;
+}
