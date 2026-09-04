@@ -15,7 +15,10 @@ class PredictionResponse(BaseModel):
     cluster_id: int
     landmark_name: str
     horizon: int
+    actual_demand: float = 35.0
     predicted_demand: float
+    actual_surge: float = 1.15
+    predicted_surge: float = 1.45
     unit: str = "ride_requests"
     model_version: str = "GBDT-Trio-v1.0"
 
