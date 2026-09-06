@@ -171,6 +171,17 @@ if __name__ == "__main__":
     evaluator = ModelEvaluator(str(model_path))
     report = evaluator.generate_evaluation_report(features_df)
 
+    out_json = Path("results/evaluation_results.json")
+    out_json.parent.mkdir(parents=True, exist_ok=True)
+    report_dict = {
+        "project": "Ola Bike Ride Request Demand Forecasting",
+        "city": "chennai",
+        "horizons": report.to_dict(orient="records"),
+    }
+    import json
+    with open(out_json, "w") as f:
+        json.dump(report_dict, f, indent=2)
+
     print("\n========================================================")
     print("=== Phase 3 Evaluation Benchmark Summary (WAPE/MAE/RMSE) ===")
     print("========================================================")
