@@ -128,7 +128,15 @@ python src/db.py
 python -m uvicorn api.main:app --reload --port 8000
 ```
 
-### 5. Running Automated Test Suite
+### 5. Running Next.js 14 Fleet Control Dashboard
+```bash
+# Start Next.js operational dashboard on http://localhost:3000
+cd dashboard
+npm install
+npm run dev
+```
+
+### 6. Running Automated Test Suite
 ```bash
 # Run all 23 unit tests
 python -m pytest tests/ -v
@@ -138,6 +146,7 @@ python -m pytest tests/ -v
 
 ## 📄 Key Project Deliverables
 
+* 📊 **[presentation.md](presentation.md)** — Project Defense Guide, Slide Deck Outline, Live Demo Walkthrough & Faculty Q&A.
 * 🧠 **[MODEL_ARCHITECTURE.md](MODEL_ARCHITECTURE.md)** — Dual-Paradigm Model Specifications, Tweedie Loss Math & Benchmarks.
 * 🧠 **[ML_PROPOSAL.md](ML_PROPOSAL.md)** — Machine Learning Framework Architecture & Design Proposal.
 * 📖 **[PROJECT_PROPOSAL.md](PROJECT_PROPOSAL.md)** — Comprehensive Academic Project Proposal & System Design.
