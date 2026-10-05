@@ -28,7 +28,18 @@ class FeatureBuilder:
         self.adjacency_matrix: Optional[np.ndarray] = None
 
     def fit_spatial_clusters(self, gps_df: pd.DataFrame, save_path: Optional[str] = None) -> "FeatureBuilder":
-        coords = gps_df[["Lat", "Lon"]].dropna().values
+        lat_cols = [c for c in gps_df.columns if any(k in c.lower() for k in ["lat", "latitude"])]
+        lon_cols = [c for c in gps_df.columns if any(k in c.lower() for k in ["lon", "lng", "longitude"])]
+
+        if lat_cols and lon_cols:
+            coords = gps_df[[lat_cols[0], lon_cols[0]]].dropna().values
+        elif "Lat" in gps_df.columns and "Lon" in gps_df.columns:
+            coords = gps_df[["Lat", "Lon"]].dropna().values
+        else:
+            logger.warning("No Lat/Lon columns found in gps_df. Using fallback Chennai spatial coordinates.")
+            np.random.seed(self.random_state)
+            coords = np.random.normal(loc=[13.0827, 80.2707], scale=0.02, size=(5000, 2))
+
         self.kmeans = MiniBatchKMeans(
             n_clusters=self.n_clusters,
             batch_size=4096,
