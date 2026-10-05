@@ -42,10 +42,10 @@ class DatabaseManager:
             return pd.DataFrame()
 
         sql = f"""
-            SELECT timestamp, cluster_id, count AS demand, temp, humidity, windspeed, is_holiday
+            SELECT datetime AS timestamp, cluster_id, cnt AS demand, temp, humidity, windspeed, is_holiday
             FROM '{parquet_file}'
             WHERE cluster_id = {cluster_id}
-            ORDER BY timestamp DESC
+            ORDER BY datetime DESC
             LIMIT {hours}
         """
         return self.query(sql)
@@ -60,9 +60,9 @@ class DatabaseManager:
             SELECT 
                 cluster_id,
                 COUNT(*) AS total_records,
-                AVG(count) AS mean_hourly_demand,
-                MAX(count) AS max_peak_demand,
-                STDDEV(count) AS demand_stddev,
+                AVG(cnt) AS mean_hourly_demand,
+                MAX(cnt) AS max_peak_demand,
+                STDDEV(cnt) AS demand_stddev,
                 AVG(temp) AS avg_temperature
             FROM '{parquet_file}'
             GROUP BY cluster_id
