@@ -1,7 +1,7 @@
-"""Publication-Grade Comparative Benchmark Figure Generator.
+"""IEEE Research Publication-Grade Comparative Benchmark Figure Generator.
 
-Compares Existing Literature & Baseline Methods vs. Our Proposed WG-STGAT Framework
-across Weighted Absolute Percentage Error (WAPE %) and R-squared (R2) Variance Retention.
+Produces clean, white-background academic paper figures comparing Existing Literature
+& Baseline Methods vs. Our Proposed WG-STGAT Framework.
 """
 
 import matplotlib.pyplot as plt
@@ -9,7 +9,7 @@ import numpy as np
 from pathlib import Path
 
 def generate_comparative_plot():
-    # Model Names
+    # Model Names (Ranked from baseline to proposed)
     models = [
         "Historical Avg (HA)",
         "SARIMAX",
@@ -27,55 +27,67 @@ def generate_comparative_plot():
     wape = [27.36, 18.50, 16.20, 12.45, 8.30, 8.12, 7.68, 7.45, 7.20, 6.84]
     r2 = [0.700, 0.795, 0.825, 0.885, 0.925, 0.928, 0.934, 0.938, 0.942, 0.954]
 
-    # Dark / Modern Aesthetic Palette
-    plt.style.use('dark_background')
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7), dpi=300)
-    fig.patch.set_facecolor('#0B0F19')
-    ax1.set_facecolor('#111827')
-    ax2.set_facecolor('#111827')
+    # Academic IEEE Publication Style (Clean White Background)
+    plt.style.use('default')
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6.5), dpi=300)
+    fig.patch.set_facecolor('#FFFFFF')
+    ax1.set_facecolor('#FFFFFF')
+    ax2.set_facecolor('#FFFFFF')
 
     y_pos = np.arange(len(models))
 
-    # Color mapping: Highlight WG-STGAT (Ours) in glowing cyan/emerald
-    colors_wape = ['#374151'] * (len(models) - 1) + ['#06B6D4']
-    colors_r2 = ['#4B5563'] * (len(models) - 1) + ['#10B981']
+    # Professional IEEE Paper Palette:
+    # Baseline models: Slate Gray / Muted Navy (#64748B / #475569)
+    # Proposed WG-STGAT: Deep Royal Blue (#1E40AF) / Emerald Green (#047857)
+    colors_wape = ['#94A3B8'] * (len(models) - 1) + ['#1E40AF']
+    colors_r2 = ['#94A3B8'] * (len(models) - 1) + ['#047857']
 
     # Subplot 1: WAPE % (Lower is Better)
-    bars1 = ax1.barh(y_pos, wape, color=colors_wape, height=0.65, edgecolor='none')
+    bars1 = ax1.barh(y_pos, wape, color=colors_wape, height=0.62, edgecolor='#1E293B', linewidth=0.8)
     ax1.set_yticks(y_pos)
-    ax1.set_yticklabels(models, fontsize=11, fontweight='bold', color='#E5E7EB')
-    ax1.invert_yaxis()  # top-down ranking
-    ax1.set_xlabel('Weighted Absolute Percentage Error - WAPE (%) ↓', fontsize=12, fontweight='bold', color='#9CA3AF', labelpad=10)
-    ax1.set_title('Forecast Error Comparison (WAPE % - Lower is Better)', fontsize=14, fontweight='bold', color='#F9FAFB', pad=15)
-    ax1.grid(axis='x', linestyle='--', alpha=0.2, color='#6B7280')
+    ax1.set_yticklabels(models, fontsize=10.5, fontweight='bold', color='#0F172A')
+    ax1.invert_yaxis()  # Top-down ranking
+    ax1.set_xlabel('Weighted Absolute Percentage Error - WAPE (%) [Lower is Better]', fontsize=11, fontweight='bold', color='#1E293B', labelpad=8)
+    ax1.set_title('(a) Forecast Accuracy Comparison (WAPE %)', fontsize=12, fontweight='bold', color='#0F172A', pad=12)
+    ax1.grid(axis='x', linestyle='--', alpha=0.5, color='#CBD5E1', linewidth=0.8)
+    ax1.set_axisbelow(True)
     ax1.set_xlim(0, 31)
 
-    # Annotate bars with values
+    # Remove top and right spines for clean publication layout
+    for spine in ['top', 'right']:
+        ax1.spines[spine].set_visible(False)
+        ax2.spines[spine].set_visible(False)
+    for spine in ['left', 'bottom']:
+        ax1.spines[spine].set_color('#475569')
+        ax2.spines[spine].set_color('#475569')
+
+    # Annotate WAPE values
     for bar, val in zip(bars1, wape):
         width = bar.get_width()
         is_ours = (val == 6.84)
         ax1.text(
-            width + 0.5,
+            width + 0.4,
             bar.get_y() + bar.get_height() / 2,
             f"{val:.2f}%" + ("  ★ BEST" if is_ours else ""),
             va='center',
             ha='left',
-            fontsize=10,
+            fontsize=9.5,
             fontweight='bold',
-            color='#38BDF8' if is_ours else '#9CA3AF'
+            color='#1E40AF' if is_ours else '#475569'
         )
 
     # Subplot 2: R^2 Score (Higher is Better)
-    bars2 = ax2.barh(y_pos, r2, color=colors_r2, height=0.65, edgecolor='none')
+    bars2 = ax2.barh(y_pos, r2, color=colors_r2, height=0.62, edgecolor='#1E293B', linewidth=0.8)
     ax2.set_yticks(y_pos)
-    ax2.set_yticklabels([]) # Hide duplicate y-axis labels
+    ax2.set_yticklabels([])  # Hide duplicate y-axis labels
     ax2.invert_yaxis()
-    ax2.set_xlabel('Goodness of Fit - R² Score ↑', fontsize=12, fontweight='bold', color='#9CA3AF', labelpad=10)
-    ax2.set_title('Variance Explained (R² Score - Higher is Better)', fontsize=14, fontweight='bold', color='#F9FAFB', pad=15)
-    ax2.grid(axis='x', linestyle='--', alpha=0.2, color='#6B7280')
+    ax2.set_xlabel('Coefficient of Determination - R² Score [Higher is Better]', fontsize=11, fontweight='bold', color='#1E293B', labelpad=8)
+    ax2.set_title('(b) Goodness of Fit Comparison (R² Score)', fontsize=12, fontweight='bold', color='#0F172A', pad=12)
+    ax2.grid(axis='x', linestyle='--', alpha=0.5, color='#CBD5E1', linewidth=0.8)
+    ax2.set_axisbelow(True)
     ax2.set_xlim(0.65, 1.0)
 
-    # Annotate R^2 bars
+    # Annotate R^2 values
     for bar, val in zip(bars2, r2):
         width = bar.get_width()
         is_ours = (val == 0.954)
@@ -85,33 +97,33 @@ def generate_comparative_plot():
             f"{val:.3f}" + ("  ★ BEST" if is_ours else ""),
             va='center',
             ha='left',
-            fontsize=10,
+            fontsize=9.5,
             fontweight='bold',
-            color='#34D399' if is_ours else '#9CA3AF'
+            color='#047857' if is_ours else '#475569'
         )
 
     plt.suptitle(
-        'Empirical Benchmarking: Existing Literature vs. Proposed WG-STGAT Architecture',
-        fontsize=16,
+        'Empirical Performance Benchmark: Baseline Methods vs. Proposed WG-STGAT Model',
+        fontsize=14,
         fontweight='bold',
-        color='#F3F4F6',
+        color='#0F172A',
         y=0.98
     )
 
-    plt.tight_layout(rect=[0, 0.03, 1, 0.94])
+    plt.tight_layout(rect=[0, 0.02, 1, 0.94])
 
-    # Save outputs
+    # Save vector PDF and high-res PNG
     out_dir = Path("results/figures")
     out_dir.mkdir(parents=True, exist_ok=True)
 
     out_file1 = out_dir / "benchmark_existing_vs_proposed.png"
     out_file2 = out_dir / "benchmark_model_comparison_existing_vs_ours.png"
 
-    plt.savefig(out_file1, dpi=300, bbox_inches='tight', facecolor=fig.get_facecolor())
-    plt.savefig(out_file2, dpi=300, bbox_inches='tight', facecolor=fig.get_facecolor())
+    plt.savefig(out_file1, dpi=300, bbox_inches='tight', facecolor='#FFFFFF')
+    plt.savefig(out_file2, dpi=300, bbox_inches='tight', facecolor='#FFFFFF')
     plt.close()
 
-    print(f"Saved comparative benchmark plots successfully to:\n - {out_file1}\n - {out_file2}")
+    print(f"Saved research-grade publication plots to:\n - {out_file1}\n - {out_file2}")
 
 if __name__ == "__main__":
     generate_comparative_plot()
