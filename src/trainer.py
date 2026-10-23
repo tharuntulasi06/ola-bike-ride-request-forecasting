@@ -65,6 +65,9 @@ class GBDTTrioTrainer:
     ) -> Tuple[Dict[str, Any], Dict[str, float]]:
         self.feature_names = list(X_train.columns)
 
+        y_train = np.clip(y_train, 0.0, None)
+        y_val = np.clip(y_val, 0.0, None)
+
         def objective(trial: optuna.Trial) -> float:
             xgb_params = {
                 "n_estimators": trial.suggest_int("xgb_n_estimators", 50, 150),
@@ -75,7 +78,7 @@ class GBDTTrioTrainer:
                 "objective": "reg:tweedie",
                 "tweedie_variance_power": trial.suggest_float("xgb_tweedie_power", 1.1, 1.9),
                 "random_state": self.random_state,
-                "n_jobs": -1,
+                "n_jobs": 1,
             }
             xgb = XGBRegressor(**xgb_params)
             xgb.fit(X_train, y_train)
@@ -94,7 +97,7 @@ class GBDTTrioTrainer:
             "objective": "reg:tweedie",
             "tweedie_variance_power": study.best_params["xgb_tweedie_power"],
             "random_state": self.random_state,
-            "n_jobs": -1,
+            "n_jobs": 1,
         }
 
         xgb_model = XGBRegressor(**best_xgb_params)
@@ -105,7 +108,7 @@ class GBDTTrioTrainer:
             learning_rate=0.08,
             max_depth=6,
             random_state=self.random_state,
-            n_jobs=-1,
+            n_jobs=1,
             verbose=-1,
         )
         lgb_model.fit(X_train, y_train)
